@@ -15,14 +15,29 @@ const NDVI_STOPS = [
 // First year of loss, in rust inks: early, settled loss = deep oxblood; recent, unconfirmed = pale ochre.
 // Every colour the canvas draws comes from the CSS tokens, so a theme is a stylesheet change.
 let ONSET, HEALTHY, PAPER, INK, NODATA, PLATE, WASH, NF, BASEC;
+// Browsers may hand custom properties back as hex, rgb() or a name, so colours are resolved by
+// painting one pixel; anything missing falls back to the field-sheet defaults.
+const probe = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+function toRgb(colour, fallback) {
+  probe.clearRect(0, 0, 1, 1);
+  probe.fillStyle = "#000"; probe.fillStyle = fallback; probe.fillStyle = colour || fallback;
+  probe.fillRect(0, 0, 1, 1);
+  const d = probe.getImageData(0, 0, 1, 1).data;
+  return [d[0], d[1], d[2]];
+}
+const toHex = (rgb) => "#" + rgb.map((c) => c.toString(16).padStart(2, "0")).join("");
 function readTheme() {
   const cs = getComputedStyle(document.documentElement);
   const v = (n) => cs.getPropertyValue(n).trim();
-  ONSET = [0, 1, 2, 3, 4, 5, 6].map((i) => v(`--loss-${i}`));
-  HEALTHY = v("--spruce"); PAPER = v("--sheet"); INK = v("--ink");
-  NODATA = hexRgb(v("--nodata"));
-  PLATE = { lo: +v("--plate-lo"), span: +v("--plate-span"), tint: hexRgb(v("--plate-tint")) };
-  WASH = v("--wash"); NF = v("--not-forest"); BASEC = v("--muted");
+  const col = (n, d) => toHex(toRgb(v(n), d));
+  const num = (n, d) => { const x = parseFloat(v(n)); return Number.isFinite(x) ? x : d; };
+  const LOSS = ["#5c1913", "#8c2618", "#b23d1c", "#cb5f24", "#da8532", "#e2aa4b", "#e9c970"];
+  ONSET = LOSS.map((d, i) => col(`--loss-${i}`, d));
+  HEALTHY = col("--spruce", "#2e5b43"); PAPER = col("--sheet", "#f2f4ef"); INK = col("--ink", "#17201b");
+  NODATA = toRgb(v("--nodata"), "#d3d9d1");
+  PLATE = { lo: num("--plate-lo", 0.36), span: num("--plate-span", 0.4), tint: toRgb(v("--plate-tint"), "#f2fbef") };
+  WASH = v("--wash") || "rgba(242,244,239,0.66)";
+  NF = col("--not-forest", "#9aa59d"); BASEC = col("--muted", "#66736b");
   changeCache.clear();
 }
 
