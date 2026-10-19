@@ -184,7 +184,7 @@ footer b { color: var(--ink); }
   <section class="col">
     <h2>The data</h2>
     <p>A 9.6 km square around the Brocken and Schierke at 20 m resolution: 384 Sentinel-2 passes from April to October, 2017 to 2025. Cloud, shadow and snow are masked and left as gaps, never filled in. Each summer becomes the median of its clear views, and 2017 and 2018 form the baseline everything else is measured against.</p>
-    <p>A small Python pipeline fetches and prepares the data. Everything else runs in the browser, drawn directly to canvas and SVG, with no map library in between.</p>
+    <p>A small Python pipeline finds the scenes through a STAC catalogue and reads only the window it needs from cloud-optimised GeoTIFFs, the open standards most imagery platforms now share. Everything else runs in the browser, drawn directly to canvas and SVG, with no map library in between.</p>
   </section>
 
   <section>
@@ -293,6 +293,7 @@ footer b { color: var(--ink); }
       <li><b>Use sharper, more frequent imagery</b> to date loss to the month rather than the summer, and to resolve individual trees that 20 m pixels miss.</li>
       <li><b>Put it in front of a forester and an analyst.</b> The confidence wording, the alert thresholds and the provisional-year rule are my best judgement until people who make these calls have used them.</li>
       <li><b>Let people save and compare their own areas,</b> the gap the current product admits to.</li>
+      <li><b>Carry the same pattern into agentic workflows.</b> When an agent answers a question about the Earth, it needs what this verdict has: the answer first, then its evidence and confidence attached, so a person can check it before acting on it.</li>
     </ul>
   </section>
 
