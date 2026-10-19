@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Forest Change Explorer · Case study · Tyler Hagan</title>
+<meta name="description" content="Where has the forest died, since when, and how sure can we be? A monitoring concept on nine summers of real Sentinel-2 data, designed for three kinds of customer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
+<style>
+:root {
+  --paper: #e6eae3; --sheet: #f2f4ef; --ink: #17201b; --ink-2: #3d4a43; --muted: #66736b;
+  --rule: #bfc8bf; --rule-soft: #d3d9d1; --rust: #8c2618; --spruce: #2e5b43;
+  --font: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 400 17px/1.6 var(--font); -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+h1, h2, h3, p, figure, ul, ol { margin: 0; }
+img { display: block; max-width: 100%; height: auto; }
+
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; max-width: 1120px; margin: 0 auto; padding: 18px max(20px, env(safe-area-inset-left, 0px)); font-size: 0.92rem; }
+.top .me { font-weight: 700; text-decoration: none; font-variation-settings: "wdth" 110; letter-spacing: -0.01em; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border: 1.5px solid var(--ink); border-radius: 5px; background: var(--ink); color: var(--sheet); font-weight: 600; font-size: 0.92rem; text-decoration: none; white-space: nowrap; }
+.btn.ghost { background: none; color: var(--ink); }
+.btn:hover { filter: brightness(1.15); }
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 max(20px, env(safe-area-inset-left, 0px)) 96px; }
+.col { max-width: 680px; }
+
+header.intro { padding: 40px 0 28px; border-top: 2px solid var(--ink); }
+.kind { font-size: 0.9rem; font-weight: 500; color: var(--muted); font-variation-settings: "wdth" 80; }
+h1 { margin-top: 10px; font-size: clamp(2.1rem, 1.4rem + 3.4vw, 3.9rem); font-weight: 700; font-variation-settings: "wdth" 112; letter-spacing: -0.035em; line-height: 1.0; max-width: 16ch; text-wrap: balance; }
+.dek { margin-top: 18px; font-size: 1.2rem; line-height: 1.45; color: var(--ink-2); max-width: 46ch; text-wrap: pretty; }
+
+.tldr { display: grid; grid-template-columns: 1fr 1fr; margin-top: 30px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.tldr > div { padding: 18px 24px 20px 0; }
+.tldr > div + div { padding-left: 24px; border-left: 1px solid var(--rule); }
+.tldr h2 { font-size: 0.9rem; font-weight: 700; color: var(--muted); font-variation-settings: "wdth" 80; }
+.tldr p { margin-top: 6px; font-size: 1.02rem; line-height: 1.5; }
+.tldr .arrow { color: var(--rust); font-weight: 700; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px; margin-top: 18px; font-size: 0.9rem; color: var(--ink-2); }
+.facts dt { font-weight: 700; color: var(--ink); font-variation-settings: "wdth" 85; }
+.facts dd { margin: 2px 0 0; line-height: 1.45; }
+.links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+
+figure { margin-top: 32px; }
+figure img { border: 1.5px solid var(--ink); background: var(--sheet); }
+figcaption { margin-top: 10px; font-size: 0.88rem; color: var(--muted); line-height: 1.5; max-width: 70ch; }
+figure.hero { margin-top: 36px; }
+
+section { margin-top: 64px; }
+section > h2 { font-size: clamp(1.45rem, 1.15rem + 1.1vw, 2rem); font-weight: 700; font-variation-settings: "wdth" 108; letter-spacing: -0.025em; line-height: 1.12; padding-top: 14px; border-top: 1px solid var(--rule); }
+section p { margin-top: 14px; }
+section p.lead { font-size: 1.12rem; }
+.q { font-style: italic; }
+
+.decision { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr); gap: 0 12px; margin-top: 30px; }
+.decision .n { font-size: 1.5rem; font-weight: 700; color: var(--rust); line-height: 1.2; font-variation-settings: "wdth" 110; }
+.decision h3 { font-size: 1.18rem; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; }
+.decision p { margin-top: 6px; }
+.decision.turn { padding: 22px 22px 24px; margin-left: -22px; margin-right: -22px; background: var(--sheet); border-left: 4px solid var(--rust); }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr); gap: 32px; align-items: start; }
+.split figure { margin-top: 26px; }
+
+.three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 28px; }
+.three figure { margin-top: 0; }
+.three h3 { font-size: 1rem; font-weight: 700; margin-top: 12px; }
+.three p { margin-top: 4px; font-size: 0.92rem; line-height: 1.5; color: var(--ink-2); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.phones { display: grid; grid-template-columns: repeat(2, minmax(0, 240px)); gap: 20px; }
+.phones img { border-radius: 18px; }
+
+ul.next { list-style: none; padding: 0; margin-top: 16px; }
+ul.next li { padding: 12px 0 12px 22px; border-top: 1px solid var(--rule-soft); position: relative; }
+ul.next li::before { content: ""; position: absolute; left: 2px; top: 22px; width: 9px; height: 9px; background: var(--rust); }
+ul.next b { font-weight: 700; }
+
+footer { margin-top: 72px; padding-top: 18px; border-top: 2px solid var(--ink); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 0.88rem; color: var(--muted); }
+footer b { color: var(--ink); }
+
+@media (max-width: 760px) {
+  body { font-size: 16px; }
+  .tldr, .pair, .split { grid-template-columns: 1fr; }
+  .tldr > div + div { padding-left: 0; border-left: 0; border-top: 1px solid var(--rule); }
+  .facts { grid-template-columns: 1fr; gap: 10px; }
+  .three { grid-template-columns: 1fr; gap: 28px; }
+  .decision.turn { margin-left: -12px; margin-right: -12px; padding: 18px 12px 20px; }
+  .top .btn.ghost { display: none; }
+}
+
+/* ---------------------------------------------------------------- PDF */
+@media print {
+  @page { size: A4; margin: 14mm 14mm 16mm; }
+  body { background: #fff; font-size: 10.5pt; line-height: 1.5; }
+  p, li { orphans: 3; widows: 3; }
+  .print-links { break-after: avoid; }
+  .top, .links, .no-print { display: none !important; }
+  .wrap { padding: 0; max-width: none; }
+  header.intro { padding-top: 0; border-top: 0; }
+  h1 { font-size: 30pt; }
+  .dek { font-size: 13pt; }
+  section { margin-top: 26pt; break-inside: auto; }
+  section > h2 { break-after: avoid; font-size: 17pt; }
+  figure, .decision, .tldr, .three > div { break-inside: avoid; }
+  figure.hero { break-before: avoid; }
+  .decision.turn { background: #f2f4ef; -webkit-print-color-adjust: exact; print-color-adjust: exact; margin-left: 0; margin-right: 0; }
+  ul.next li::before, .decision .n { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .phones { grid-template-columns: repeat(2, 52mm); }
+  a { text-decoration: none; }
+  .print-links { display: block !important; }
+}
+.print-links { display: none; margin-top: 12px; font-size: 9.5pt; color: var(--ink-2); }
+</style>
+</head>
+<body>
+
+<nav class="top" aria-label="Site">
+  <a class="me" href="https://tylerhagan.co.uk">Tyler Hagan</a>
+  <span style="display:flex;gap:8px">
+    <a class="btn ghost" href="forest-change-case-study.pdf">PDF</a>
+    <a class="btn" href="../">Open the prototype</a>
+  </span>
+</nav>
+
+<main class="wrap">
+  <header class="intro">
+    <p class="kind">Case study · Self-initiated concept, 2026</p>
+    <h1>Where has the forest died?</h1>
+    <p class="dek">A monitoring tool that answers it, and two harder questions: since when, and how sure can we be. Built on nine summers of real satellite data from the upper Harz.</p>
+
+    <div class="tldr">
+      <div>
+        <h2>Problem</h2>
+        <p>Large parts of the old spruce in the upper Harz have died since the 2018 drought. Seeing that is easy. Saying exactly where, since when and how sure you are usually takes GIS software and someone who knows how to drive it.</p>
+      </div>
+      <div>
+        <h2>Outcome</h2>
+        <p>A working prototype that answers on one screen, on desktop and phone: <b>about 40% of the forest lost its canopy, most of it in 2019 and 2020.</b> Half of that ground is green again, <span class="arrow">and it isn't forest.</span></p>
+      </div>
+    </div>
+
+    <dl class="facts">
+      <div><dt>Role</dt><dd>Everything: framing the question, interaction and visual design, the data pipeline and the front end</dd></div>
+      <div><dt>Data</dt><dd>Copernicus Sentinel-2, 384 passes, April to October, 2017 to 2025, at 20 m</dd></div>
+      <div><dt>Designed for</dt><dd>A district forester, a state analyst and a commercial buyer</dd></div>
+    </dl>
+
+    <div class="links">
+      <a class="btn" href="../">Open the prototype</a>
+      <a class="btn ghost" href="../?theme=civic">Civic version</a>
+      <a class="btn ghost" href="../?theme=orbital">Orbital version</a>
+      <a class="btn ghost" href="https://github.com/tylerhagan/forest-dieback">Code</a>
+    </div>
+    <p class="print-links">Prototype: forest.tylerhagan.co.uk · Civic: forest.tylerhagan.co.uk/?theme=civic · Orbital: forest.tylerhagan.co.uk/?theme=orbital</p>
+
+    <figure class="hero">
+      <img src="img/hero.jpg" width="1600" height="1000" alt="The explorer: a map of the upper Harz with lost canopy shaded in rust tones, a timeline of loss by year below it, and on the right the verdict: by summer 2025, 40% of the forest had lost its canopy, most of it in 2019 and 2020.">
+      <figcaption>The whole study area in summer 2025. Rust marks canopy loss by the year it started, oxblood for 2019 through to ochre for 2025. Faded rust is ground that has gone green again.</figcaption>
+    </figure>
+  </header>
+
+  <section class="col">
+    <h2>Why this problem</h2>
+    <p class="lead">I wanted a brief that exercised the whole job: layered map data, change over time, and charts that turn data into a decision.</p>
+    <p>The Harz dieback is one of the clearest change stories in Europe. After the 2018 drought, bark beetle took large parts of the old spruce around the Brocken within a few years, and freely available Sentinel-2 imagery covers all of it, summer after summer. It is real, it is visible, and it is genuinely hard to measure well.</p>
+  </section>
+
+  <section class="col">
+    <h2>One question, three parts</h2>
+    <p>Before touching the data I wrote down the question a forester or an analyst actually asks: <span class="q">where has the forest died, since when, and how sure can we be?</span> Each part became a part of the interface.</p>
+    <p><b>Where</b> is the map. <b>Since when</b> is the timeline, which doubles as the loss chart, so picking a year and reading the trend are the same gesture. <b>How sure</b> is a confidence rating that explains itself rather than just scoring itself.</p>
+    <figure>
+      <img src="img/timeline.jpg" width="1400" height="173" alt="The timeline: one column per summer from 2017 to 2025. Bars show forest lost each year, tallest in 2019 and 2020. A thin line under each year shows how many cloud-free views that summer had.">
+      <figcaption>The timeline is the year picker and the loss chart at once. The thin line under each year shows how many cloud-free views that summer had.</figcaption>
+    </figure>
+  </section>
+
+  <section class="col">
+    <h2>The data</h2>
+    <p>A 9.6 km square around the Brocken and Schierke at 20 m resolution: 384 Sentinel-2 passes from April to October, 2017 to 2025. Cloud, shadow and snow are masked and left as gaps, never filled in. Each summer becomes the median of its clear views, and 2017 and 2018 form the baseline everything else is measured against.</p>
+    <p>A small Python pipeline fetches and prepares the data. Everything else runs in the browser, drawn directly to canvas and SVG, with no map library in between.</p>
+  </section>
+
+  <section>
+    <div class="col">
+      <h2>Five decisions that shaped it</h2>
+    </div>
+
+    <div class="split">
+      <div>
+        <div class="decision">
+          <span class="n">1</span>
+          <div><h3>Answer first, evidence second</h3>
+          <p>Most remote sensing tools open on imagery and leave the conclusion to you. This one opens on a sentence: by summer 2025, 40% of the forest had lost its canopy, most of it in 2019 and 2020. The map, timeline and charts sit underneath as evidence you can interrogate. Draw a box anywhere and the sentence rewrites itself for that area.</p></div>
+        </div>
+        <div class="decision">
+          <span class="n">2</span>
+          <div><h3>One bad summer is not loss</h3>
+          <p>A hot, dry summer or a hazy pass can drag the signal down for a season. A drop only counts if it persists into the next clear summer. The cost is that the newest year is always provisional, so the interface says so plainly instead of hiding it.</p></div>
+        </div>
+      </div>
+      <figure>
+        <img src="img/verdict.jpg" width="868" height="1136" alt="The verdict panel: the question, the answer as a sentence, then a ledger of canopy lost, worst year, share green again and confidence, with the reasons for the confidence rating underneath.">
+        <figcaption>The verdict leads. The ledger and the reasons for the confidence rating follow.</figcaption>
+      </figure>
+    </div>
+
+    <div class="split">
+      <div class="decision turn">
+        <span class="n">3</span>
+        <div><h3>Green again is not forest again</h3>
+        <p>This is the decision I would most like to talk about. My first version showed the damage peaking and then shrinking from 2022. It looked like recovery.</p>
+        <p>Checking individual squares told a different story. Where the spruce had died, grass, shrubs and young trees were turning the ground green again, and a vegetation index cannot tell them apart from mature canopy. A naive rule would have told a forester the problem was going away.</p>
+        <p>So regreened loss stays on the map, faded, and is reported separately: about half of the lost ground. The honest answer is less comforting and more useful.</p></div>
+      </div>
+      <figure>
+        <img src="img/spot.jpg" width="868" height="1186" alt="One 200 metre square: a filmstrip of summer images from 2017 to 2025 turning from dark forest to brown in 2020 and pale green by 2025, above a chart where the vegetation index drops sharply in 2020 and climbs back to the baseline by 2025.">
+        <figcaption>One 200 m square. Healthy until 2020, lost, then reading green again by 2025. The filmstrip shows why that green isn't forest.</figcaption>
+      </figure>
+    </div>
+
+    <div class="col">
+      <div class="decision">
+        <span class="n">4</span>
+        <div><h3>Uncertainty is part of the answer</h3>
+        <p>Cloud gaps show in three places: the line under each year on the timeline, the acquisition strip under each spot chart, and gaps in the series that are never smoothed over. Confidence comes with its reasons in plain words, such as how many cloud-free views it rests on and why this year's loss is still provisional.</p></div>
+      </div>
+      <div class="decision">
+        <span class="n">5</span>
+        <div><h3>Plain words, method on request</h3>
+        <p>Canopy loss, cloud-free views and confidence, rather than index thresholds. The method is one tap away for anyone who wants to check the working, and the numbers are there for the people who need them.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <h2>Same product, three customers</h2>
+      <p>The same question matters to very different people, so I designed the same tool for three of them, switched from a small demo control that sits outside the product. Every colour, including those drawn on the map itself, comes from one set of tokens, so each version is a stylesheet rather than a fork.</p>
+    </div>
+    <div class="three">
+      <div>
+        <figure><img src="img/theme-field.jpg" width="1400" height="875" alt="Field sheet version: pale paper background, black ink, loss in rust tones."></figure>
+        <h3>Forester: Field sheet</h3>
+        <p>For a district forester on site. Paper, ink and rust, in the language of a survey map, with coordinates in the margin like a printed sheet.</p>
+      </div>
+      <div>
+        <figure><img src="img/theme-civic.jpg" width="1400" height="875" alt="Civic version: white background, blue header bar, loss in plum tones."></figure>
+        <h3>Analyst: Civic</h3>
+        <p>For a state analyst writing a report. High contrast, plain type, strong focus states, and loss in plum ordered by lightness, so it reads with any colour vision and is never mistaken for water.</p>
+      </div>
+      <div>
+        <figure><img src="img/theme-orbital.jpg" width="1400" height="875" alt="Orbital version: dark background, glass panels, loss glowing from red to gold over a dark blue map."></figure>
+        <h3>Buyer: Orbital</h3>
+        <p>For a commercial portfolio lead. Dark and imagery-forward, with loss that glows from hot red to gold over a night-blue plate.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <h2>Where it would live</h2>
+      <p>A feature is only useful once people can find their way back to it and act on what it tells them. So the explorer sits inside Stand, an invented monitoring product: saved areas you can search, alerts that respect the provisional year, a report export and a status bar that says how fresh the data is.</p>
+      <p>None of it is decoration. Opening a saved area rescopes the verdict, the timeline and the spot history. An alert is checked against the actual loss in its area after each pass. The notifications come from the real coverage, such as summer 2021 having only five cloud-free views.</p>
+    </div>
+    <div class="pair" style="margin-top:28px">
+      <figure style="margin-top:0"><img src="img/shell-areas.jpg" width="1400" height="875" alt="The product shell with the saved areas panel open, listing five areas with forest area and share lost for each."><figcaption>Saved areas, each with its forest area and share lost.</figcaption></figure>
+      <figure style="margin-top:0"><img src="img/shell-alert.jpg" width="1400" height="875" alt="The set alert dialog for Brocken summit, with a threshold for new canopy loss and a note that alerts for the current year arrive marked provisional."><figcaption>Setting an alert. It says up front that this year's loss is provisional.</figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <h2>On a phone</h2>
+      <p>Field staff are the people most likely to open this outdoors, so every view works on a phone, and I tested it on one. The same answer, reordered: the map and timeline first, the verdict and spot history as you scroll.</p>
+    </div>
+    <div class="phones" style="margin-top:24px">
+      <figure style="margin-top:0"><img src="img/phone.jpg" width="560" height="1212" alt="The Field sheet version on a phone: top bar, page header, map and timeline."></figure>
+      <figure style="margin-top:0"><img src="img/phone-verdict.jpg" width="560" height="1212" alt="The Orbital version on a phone, scrolled to the verdict."></figure>
+    </div>
+  </section>
+
+  <section class="col">
+    <h2>What I would do next</h2>
+    <ul class="next">
+      <li><b>Separate young growth from mature canopy</b> with a shortwave-infrared moisture index or canopy height data, turning "green again" into how much forest is actually coming back.</li>
+      <li><b>Use sharper, more frequent imagery</b> to date loss to the month rather than the summer, and to resolve individual trees that 20 m pixels miss.</li>
+      <li><b>Put it in front of a forester and an analyst.</b> The confidence wording, the alert thresholds and the provisional-year rule are my best judgement until people who make these calls have used them.</li>
+      <li><b>Let people save and compare their own areas,</b> the gap the current product admits to.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <span><b>Tyler Hagan</b>, product designer, Berlin · <a href="https://tylerhagan.co.uk">tylerhagan.co.uk</a> · <a href="mailto:tylerhagan@gmail.com">tylerhagan@gmail.com</a></span>
+    <span>Contains modified Copernicus Sentinel data 2017 to 2025</span>
+  </footer>
+</main>
+</body>
+</html>

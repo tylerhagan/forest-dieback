@@ -365,11 +365,11 @@ h1 {
 [data-theme="orbital"] .seg { border-color: var(--rule); background: rgba(255, 255, 255, 0.04); padding: 3px; gap: 2px; }
 [data-theme="orbital"] .seg button { border-radius: 8px; color: var(--muted); }
 [data-theme="orbital"] .seg button + button { border-left: 0; }
-[data-theme="orbital"] .seg button:hover { background: rgba(255, 255, 255, 0.06); color: var(--ink); }
-[data-theme="orbital"] .seg button[aria-checked="true"] { color: var(--on-accent); box-shadow: 0 0 22px -4px rgba(77, 225, 255, 0.7); font-weight: 600; }
+@media (hover: hover) { [data-theme="orbital"] .seg button:not([aria-checked="true"]):hover { background: rgba(255, 255, 255, 0.06); color: var(--ink); } }
+[data-theme="orbital"] .seg button[aria-checked="true"] { background: var(--accent); color: var(--on-accent); box-shadow: 0 0 22px -4px rgba(77, 225, 255, 0.7); font-weight: 600; }
 [data-theme="orbital"] .tool { background: rgba(255, 255, 255, 0.04); border-color: var(--rule); }
 [data-theme="orbital"] .tool:hover { border-color: rgba(255, 255, 255, 0.3); }
-[data-theme="orbital"] .tool[aria-pressed="true"] { box-shadow: 0 0 22px -4px rgba(77, 225, 255, 0.7); font-weight: 600; }
+[data-theme="orbital"] .tool[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); box-shadow: 0 0 22px -4px rgba(77, 225, 255, 0.7); font-weight: 600; }
 [data-theme="orbital"] .map {
   box-shadow: 0 0 0 1px rgba(77, 225, 255, 0.06), 0 40px 90px -40px rgba(77, 225, 255, 0.35);
 }
@@ -578,6 +578,8 @@ svg { flex: none; }
 .demo-picks button:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
 .demo-picks button[aria-checked="true"] { background: #f2f2f2; color: #121212; font-weight: 700; }
 .demo-picks button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: none; }
+.demo-link { color: #f2f2f2; padding: 6px 12px 6px 10px; border-left: 1px solid rgba(255, 255, 255, 0.2); text-decoration: underline; text-underline-offset: 3px; }
+.demo-link:hover { color: #fff; text-decoration-thickness: 2px; }
 .sw { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.4); }
 .sw-field { background: linear-gradient(135deg, #e6eae3 50%, #8c2618 50%); }
 .sw-civic { background: linear-gradient(135deg, #ffffff 50%, #1a4480 50%); }
@@ -825,6 +827,7 @@ svg { flex: none; }
     <button role="radio" data-theme-pick="civic" aria-checked="false"><i class="sw sw-civic"></i>Analyst</button>
     <button role="radio" data-theme-pick="orbital" aria-checked="false"><i class="sw sw-orbital"></i>Buyer</button>
   </div>
+  <a class="demo-link only-wide" href="case-study/">Case study</a>
 </aside>
 
 <script type="module">

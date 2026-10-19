@@ -6,6 +6,8 @@ A working prototype that answers one question for a forest or land-monitoring of
 
 It uses real Copernicus Sentinel-2 imagery of the upper Harz (Brocken, Schierke and Braunlage), where bark beetle and drought killed much of the spruce from 2018 onwards. The area is about 9.6 by 9.6 km, observed 384 times between April and October from 2017 to 2025.
 
+**Live:** [forest.tylerhagan.co.uk](https://forest.tylerhagan.co.uk) · **Case study:** [forest.tylerhagan.co.uk/case-study](https://forest.tylerhagan.co.uk/case-study/) ([PDF](web/case-study/forest-change-case-study.pdf))
+
 Run it locally:
 
 ```sh
@@ -38,6 +40,18 @@ No build step and no dependencies. The front end is plain JavaScript, canvas and
 
 **Mobile is a real target.** Field staff check things on phones. The layout stacks to one column, the map supports pinch and drag, and tapping a spot scrolls its history into view.
 
+## Same product, three customers
+
+A demo control, deliberately styled outside the product, switches between three versions designed for different people. Each is a block of design tokens; the map canvas reads its colours from the same tokens, so a version is a stylesheet rather than a fork. Link to one directly with `?theme=`.
+
+- **Field sheet** (`field`): a district forester on site. Paper, ink and rust inks, coordinates in a neatline margin.
+- **Civic** (`civic`): a state analyst writing a report. High contrast, Public Sans, strong focus states, and a plum loss ramp ordered by lightness, readable with any colour vision and never mistaken for water.
+- **Orbital** (`orbital`): a commercial buyer. Dark, glass panels, Sora, a night-blue plate under emissive loss.
+
+## Where it would live
+
+The explorer sits inside Stand, an invented monitoring product, so the surroundings don't need imagining: a top bar with workspace, saved-area search, notifications and profile; navigation for Monitor, Areas, Alerts and Reports; Share, Export report and Set alert; and a status bar with data freshness. All of it runs on the real data. Saved areas are real places and rescope the whole page (`?area=brocken`), alerts are checked against the actual loss in their area, notifications come from real coverage gaps, and the report prints from the page.
+
 ## How the data is built
 
 `pipeline/sentinel2.py` reads Sentinel-2 L2A from Microsoft Planetary Computer (free, no account needed):
@@ -60,7 +74,7 @@ The analysis that turns this into loss years, regreening and confidence runs in 
 
 - **NDVI alone cannot tell causes apart.** Bark beetle, felling, storm damage and drought look alike. I would add a shortwave-infrared moisture index, which separates young growth from mature canopy better, and canopy height data where it exists.
 - **20 m pixels miss single trees.** Higher-resolution imagery, such as PlanetScope at 3 m with near-daily revisits, would sharpen the edges and fill many of the cloud gaps.
-- **Areas are rectangles.** A real tool would accept administrative or property boundaries, and would export a short report for the file.
+- **Areas are rectangles, and drawn areas can't be saved yet.** A real tool would accept administrative or property boundaries and keep drawn areas alongside the saved ones.
 - **Thresholds are fixed.** They are reasonable defaults for spruce, but an expert user should be able to adjust them and see the map update.
 
 Contains modified Copernicus Sentinel data 2017 to 2025.
