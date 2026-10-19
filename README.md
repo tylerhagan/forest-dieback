@@ -23,17 +23,17 @@ There is no build step and there are no dependencies. The front end is plain Jav
 - **Compare against the baseline.** A swipe divider puts 2017 on one side and the selected year on the other.
 - **Read any point.** Hovering shows coordinates, the vegetation index and the canopy state under the pointer.
 - **Tap any spot to see its history.** A filmstrip shows the same 600 m of ground in every summer, so you can see the forest die and the ground turn green again. The chart shows every cloud-free observation for that 200 m square, ticks for the views lost to cloud, the summer medians, the baseline band and the detected loss year. Dragging across the chart moves the map through time, so the map and the chart are one control.
-- **Select an area and get a verdict.** "43% of the forest (409 ha) had lost its canopy by 2021. Most of it went in 2020 and 2021." This comes with a breakdown of loss by year and a confidence level that explains itself in plain language.
+- **Select an area and get a verdict.** "By summer 2025, 40% of the forest had lost its canopy. Most of it died in 2019 and 2020." This comes with a breakdown of loss by year and a confidence level that explains itself in plain language.
 
 ## Design decisions
 
 **Start from the question, not the imagery.** Earth observation tools usually start with scenes, bands and layers. The person I designed for starts with a question about a place and needs an answer they can defend. So the page leads with a verdict in a sentence, and the imagery, index and chart are the evidence behind it.
 
-**Make uncertainty part of the answer.** Cloud is the normal state of central European skies: only 175 of the 384 acquisitions for the default spot are usable. Rather than hide this, the prototype shows it in three places: the per-year quality bars on the timeline, the grey cloud ticks on the chart, and the confidence rating, which states how many clear views it rests on. Gaps are never filled in or interpolated.
+**Make uncertainty part of the answer.** Cloud is the normal state of central European skies: only 195 of the 384 acquisitions for the default spot are usable. Rather than hide this, the prototype shows it in three places: the per-year quality bars on the timeline, the grey cloud ticks on the chart, and the confidence rating, which states how many clear views it rests on. Gaps are never filled in or interpolated.
 
 **One bad summer is not loss.** The 2018 to 2020 droughts stressed forest that did not die. A drop only counts when it persists into the next clear summer. This filters out drought stress and haze, at the cost of not being able to confirm loss in the most recent year. The method notes say so.
 
-**Green again does not mean forest again.** This was the most interesting finding from working with the real data. After the spruce died, grass, shrubs and young trees made the ground green again within a few years, and NDVI climbed back towards its old values. A naive "has it recovered?" rule reported the damage shrinking from 2022, which is wrong. The prototype keeps regreened loss on the map, faded, and reports it separately: "52% of that area looks green again in 2025, most likely grass, shrubs or young trees rather than recovered forest."
+**Green again does not mean forest again.** This was the most interesting finding from working with the real data. After the spruce died, grass, shrubs and young trees made the ground green again within a few years, and NDVI climbed back towards its old values. A naive "has it recovered?" rule reported the damage shrinking from 2022, which is wrong. The prototype keeps regreened loss on the map, faded, and reports it separately: "About half of that ground is green again: grass, shrubs and young trees, not forest."
 
 **Name things the way the user would.** "Canopy loss", "cloud-free views", "summer composite" and "confidence" rather than "NDVI delta", "SCL mask" or "valid pixel count". Technical terms appear in the method notes for people who want them.
 
