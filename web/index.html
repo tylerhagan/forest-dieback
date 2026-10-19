@@ -4,68 +4,65 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Forest Change Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600;700&family=Martian+Mono:wght@300;400;500&display=swap">
 <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
-<div class="app">
-  <header class="top">
-    <div class="titles">
-      <h1 id="title">Forest change</h1>
+<!--app-->
+<div class="shell">
+  <header class="bar">
+    <div class="brand">
+      <p class="eyebrow" id="eyebrow">Sentinel-2 · 20 m · summer composites</p>
+      <h1 id="title">Forest Change Explorer</h1>
       <p class="place" id="place"></p>
     </div>
-    <span class="badge" id="sim-badge" hidden>Simulated data</span>
+    <div class="controls">
+      <div class="seg" role="radiogroup" aria-label="Map layer">
+        <button role="radio" data-layer="rgb" aria-checked="false">Imagery</button>
+        <button role="radio" data-layer="ndvi" aria-checked="false">Vegetation</button>
+        <button role="radio" data-layer="change" aria-checked="true">Loss</button>
+      </div>
+      <button class="tool" id="btn-compare" aria-pressed="false">Compare</button>
+      <button class="tool" id="btn-area" aria-pressed="false">Select area</button>
+    </div>
   </header>
 
-  <p class="question">Where has the forest died, since when, and how sure can we be?</p>
-
-  <section class="map-wrap">
-    <div class="toolbar" role="toolbar" aria-label="Map tools">
-      <div class="seg" role="radiogroup" aria-label="Layer">
-        <button role="radio" data-layer="rgb" aria-checked="true">Imagery</button>
-        <button role="radio" data-layer="ndvi" aria-checked="false">Vegetation</button>
-        <button role="radio" data-layer="change" aria-checked="false">Loss</button>
+  <main class="stage">
+    <section class="mapzone" aria-label="Map and timeline">
+      <div class="map" id="map">
+        <canvas id="canvas" aria-label="Map. Drag to pan, pinch or scroll to zoom, tap to inspect a spot."></canvas>
+        <div class="readout" id="readout" hidden></div>
+        <div class="hint" id="hint">Tap anywhere to see that spot's history</div>
+        <div class="cmp left" id="cmp-left" hidden></div>
+        <div class="cmp right" id="cmp-right" hidden></div>
+        <div class="legend" id="legend"></div>
+        <div class="scale" id="scale"><span class="scale-bar"></span><span class="scale-text"></span></div>
+        <button class="fit" id="btn-fit">Fit</button>
+        <span class="sim" id="sim-badge" hidden>Simulated data</span>
       </div>
-      <div class="tools">
-        <button class="tool" id="btn-compare" aria-pressed="false" title="Swipe to compare with the baseline year">Compare</button>
-        <button class="tool" id="btn-area" aria-pressed="false" title="Drag on the map to select an area">Select area</button>
+
+      <div class="timeline">
+        <button class="play" id="btn-play" aria-label="Play through the years">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path id="play-icon" d="M4 2.5v11l9-5.5z"/></svg>
+        </button>
+        <div class="years" id="years" role="slider" tabindex="0" aria-label="Year"></div>
       </div>
-    </div>
+      <p class="years-cap"><span id="cap-left">Forest lost each year</span><span>Line under each year: cloud-free views that summer</span></p>
+    </section>
 
-    <div class="map" id="map">
-      <canvas id="canvas" aria-label="Map. Drag to pan, pinch or scroll to zoom, tap to inspect a spot."></canvas>
-      <div class="map-hint" id="map-hint">Tap a spot to see its history</div>
-      <div class="compare-label left" id="cmp-left" hidden></div>
-      <div class="compare-label right" id="cmp-right" hidden></div>
-      <div class="scale" id="scale"><span class="scale-bar"></span><span class="scale-text"></span></div>
-      <button class="zoom-reset" id="btn-fit" title="Fit to area">Fit</button>
-    </div>
-
-    <div class="legend" id="legend"></div>
-    <div class="timeline">
-      <button class="play" id="btn-play" aria-label="Play through the years">
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>
-      </button>
-      <div class="years" id="years" role="slider" aria-label="Year" tabindex="0"></div>
-    </div>
-    <p class="timeline-note">Each year is a summer composite (mid-June to August). Bar height shows how many cloud-free views each pixel had that summer.</p>
-  </section>
-
-  <section class="card verdict" id="verdict" aria-live="polite"></section>
-
-  <section class="card point" id="point">
-    <div class="card-head">
-      <h2 id="point-title">Spot history</h2>
-      <span class="muted" id="point-coords"></span>
-    </div>
-    <div id="chart" class="chart"></div>
-    <p class="muted small" id="point-text">Tap the map to choose a spot.</p>
-  </section>
-
-  <details class="card method">
-    <summary>How this works</summary>
-    <div id="method"></div>
-  </details>
+    <aside class="rail">
+      <section class="panel verdict" id="verdict" aria-live="polite"></section>
+      <section class="panel spot" id="spot"></section>
+      <details class="panel method">
+        <summary>How this works</summary>
+        <div id="method"></div>
+      </details>
+    </aside>
+  </main>
 </div>
+<!--/app-->
 <script type="module" src="src/app.js"></script>
 </body>
 </html>

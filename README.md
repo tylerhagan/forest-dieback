@@ -17,10 +17,11 @@ No build step and no dependencies. The front end is plain JavaScript, canvas and
 
 ## What you can do
 
-- **Scrub through the years.** The timeline steps through summer composites from 2017 to 2025. The bar above each year shows how many cloud-free views each pixel had that summer, so data quality is visible before you read any result.
+- **Scrub through the years on the loss chart itself.** The timeline is also the answer: each year's bar is the forest that died that year, coloured by year, with a line underneath for how many cloud-free views that summer had. Data quality is visible before you read any result.
 - **Switch between three views of the same place.** True colour imagery, a vegetation index (NDVI), and canopy loss coloured by the year it started. Playing the timeline on the loss view shows the dieback spreading.
 - **Compare against the baseline.** A swipe divider puts 2017 on one side and the selected year on the other.
-- **Tap any spot to see its history.** The chart shows every cloud-free observation for that 200 m square, ticks for the views lost to cloud, the summer medians, the baseline band and the detected loss year. Dragging across the chart moves the map through time, so the map and the chart are one control.
+- **Read any point.** Hovering shows coordinates, the vegetation index and the canopy state under the pointer.
+- **Tap any spot to see its history.** A filmstrip shows the same 600 m of ground in every summer, so you can see the forest die and the ground turn green again. The chart shows every cloud-free observation for that 200 m square, ticks for the views lost to cloud, the summer medians, the baseline band and the detected loss year. Dragging across the chart moves the map through time, so the map and the chart are one control.
 - **Select an area and get a verdict.** "43% of the forest (409 ha) had lost its canopy by 2021. Most of it went in 2020 and 2021." This comes with a breakdown of loss by year and a confidence level that explains itself in plain language.
 
 ## Design decisions
