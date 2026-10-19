@@ -2,82 +2,101 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600;700&family=Martian+Mono:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
 <style>
-/* Layout: a map-first instrument. The map owns the screen; a quiet rail carries the answer
-   and the evidence. Chrome stays cold and neutral so the data supplies all the warmth.
-   Deliberately single-theme (dark): satellite imagery and the loss ramp read best on it. */
+/* Forest Change Explorer: a forestry survey sheet, not a console.
+   Light lichen paper, spruce-black ink, imagery printed as a map plate inside a neatline.
+   Loss is drawn in rust inks (settled oxblood for the early years, pale ochre for recent,
+   unconfirmed ones), echoing the red-then-grey stages of beetle-killed spruce.
+   One family, Archivo; its condensed widths carry labels so nothing needs all caps or mono.
+   Deliberately single theme: the plate and the rust ramp are tuned for paper. */
 :root {
-  --ink-0: #070a0b;      /* page */
-  --ink-1: #0d1214;      /* panels */
-  --ink-2: #141b1e;      /* raised, controls */
-  --line: #212b2f;
-  --text: #e7ece9;
-  --muted: #8b9793;
-  --faint: #5f6b68;
-  --ice: #a9dbe8;        /* interaction: selection, focus, current year */
-  --healthy: #86bfa0;    /* living canopy in charts */
-  --glass: rgba(9, 13, 14, 0.74);
-  --font-display: "Geologica", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-data: "Martian Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --r: 14px;
-  color-scheme: dark;
+  --paper: #e6eae3;      /* page */
+  --sheet: #f2f4ef;      /* chips, controls, raised paper */
+  --ink: #17201b;        /* text, frames, selection */
+  --ink-2: #3d4a43;
+  --muted: #66736b;
+  --rule: #bfc8bf;
+  --rule-soft: #d3d9d1;
+  --spruce: #2e5b43;     /* living canopy */
+  /* loss by first year (hex only: the canvas parses these) */
+  --loss-0: #5c1913; --loss-1: #8c2618; --loss-2: #b23d1c; --loss-3: #cb5f24;
+  --loss-4: #da8532; --loss-5: #e2aa4b; --loss-6: #e9c970;
+  --nodata: #d3d9d1;
+  --not-forest: #9aa59d;
+  --plate-lo: 0.36;      /* the imagery plate under the loss layer: lightness floor ... */
+  --plate-span: 0.40;    /* ... and range */
+  --plate-tint: #f2fbef;
+  --wash: rgba(242, 244, 239, 0.66);   /* outside a selected area */
+  --font: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --narrow: 78;          /* label width on the wdth axis */
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
-  background: var(--ink-0);
-  color: var(--text);
-  font: 400 15px/1.5 var(--font-display);
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 15px/1.5 var(--font);
+  font-variation-settings: "wdth" 100;
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
 }
 button { font: inherit; color: inherit; cursor: pointer; }
-button:focus-visible, [tabindex]:focus-visible, summary:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
-h1, h2, p { margin: 0; }
+[hidden] { display: none !important; }
+button:focus-visible, [tabindex]:focus-visible, summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+h1, h2, h3, p, dl, dd { margin: 0; }
+
+/* labels: condensed, sentence case */
+.label, .legend .lbl, .stat .k, .years-cap, .scale, .cmp, .readout, .film .fy, .chart text {
+  font-variation-settings: "wdth" var(--narrow);
+}
+.label { font-size: 0.8rem; font-weight: 500; color: var(--muted); letter-spacing: 0.005em; }
 
 .shell {
-  padding-block: 14px 40px;
+  padding-block: 18px 48px;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   display: grid;
-  gap: 14px;
+  gap: 16px;
   max-width: 1680px;
   margin: 0 auto;
 }
 
 /* ---------------------------------------------------------------- header */
-.bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px 20px; }
-.eyebrow {
-  font: 400 10.5px/1.4 var(--font-data);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
+.bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 14px 24px; }
+h1 {
+  font-size: clamp(1.5rem, 1.15rem + 1.3vw, 2.1rem);
+  font-weight: 700;
+  font-variation-settings: "wdth" 112;
+  letter-spacing: -0.025em;
+  line-height: 1.02;
 }
-h1 { font-size: clamp(1.35rem, 1.1rem + 1vw, 1.75rem); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; margin-top: 4px; }
-.place { color: var(--muted); font-size: 0.9rem; margin-top: 2px; }
+.place { color: var(--ink-2); font-size: 0.92rem; margin-top: 6px; max-width: 60ch; text-wrap: pretty; }
 .controls { display: flex; flex-wrap: wrap; gap: 6px; }
-.seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--ink-2); border: 1px solid var(--line); border-radius: 11px; }
-.seg button { border: 0; background: none; padding: 6px 12px; border-radius: 8px; font-size: 0.86rem; color: var(--muted); }
-.seg button:hover { color: var(--text); }
-.seg button[aria-checked="true"] { background: var(--text); color: var(--ink-0); font-weight: 600; }
-.tool { border: 1px solid var(--line); background: var(--ink-2); padding: 6px 12px; border-radius: 11px; font-size: 0.86rem; }
-.tool:hover { border-color: var(--faint); }
-.tool[aria-pressed="true"] { background: var(--ice); border-color: var(--ice); color: var(--ink-0); font-weight: 600; }
+.seg { display: inline-flex; border: 1px solid var(--ink); border-radius: 5px; overflow: hidden; background: var(--sheet); }
+.seg button { border: 0; background: none; padding: 7px 14px; font-size: 0.88rem; font-weight: 500; color: var(--ink-2); }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button:hover { color: var(--ink); background: var(--paper); }
+.seg button[aria-checked="true"] { background: var(--ink); color: var(--sheet); }
+.seg button[aria-checked="true"] + button { border-left-color: var(--ink); }
+.tool { border: 1px solid var(--rule); background: var(--sheet); padding: 7px 14px; border-radius: 5px; font-size: 0.88rem; font-weight: 500; }
+.tool:hover { border-color: var(--ink); }
+.tool[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--sheet); }
 
 /* ---------------------------------------------------------------- stage */
-.stage { display: grid; gap: 14px; }
+.stage { display: grid; gap: 22px; }
 .mapzone { display: grid; gap: 10px; min-width: 0; }
 .map {
   position: relative;
-  height: min(68vh, 560px);
-  min-height: 300px;
+  height: min(70vh, 580px);
+  min-height: 320px;
   max-width: 100%;
-  border-radius: var(--r);
   overflow: hidden;
-  background: #040607;
-  border: 1px solid var(--line);
+  background: var(--sheet);
+  border: 1.5px solid var(--ink);   /* the neatline */
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -85,150 +104,162 @@ h1 { font-size: clamp(1.35rem, 1.1rem + 1vw, 1.75rem); font-weight: 600; letter-
 .map canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
 .map.panning canvas { cursor: grabbing; }
 
+/* map furniture: solid paper chips, ink hairlines, no glass */
 .readout, .hint, .cmp, .legend, .scale, .fit, .sim {
   position: absolute;
-  background: var(--glass);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 9px;
-  color: var(--text);
+  background: var(--sheet);
+  border: 1px solid rgba(23, 32, 27, 0.28);
+  border-radius: 3px;
+  color: var(--ink);
 }
 .readout {
-  top: 10px; left: 10px; padding: 7px 10px; pointer-events: none;
-  font: 400 10.5px/1.65 var(--font-data); letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
-  white-space: pre;
+  top: 26px; left: 8px; padding: 6px 9px; pointer-events: none;
+  font-size: 0.76rem; line-height: 1.55;
+  display: grid; grid-template-columns: auto auto; gap: 0 12px;
 }
-.readout b { font-weight: 500; color: var(--ice); }
+.readout span { color: var(--muted); }
+.readout b { font-weight: 600; }
 .hint {
-  top: 10px; left: 50%; transform: translateX(-50%); padding: 6px 11px; font-size: 0.8rem;
+  top: 26px; left: 50%; transform: translateX(-50%); padding: 5px 10px; font-size: 0.8rem; font-weight: 500;
   pointer-events: none; transition: opacity 0.5s; white-space: nowrap;
 }
-.cmp { top: 10px; padding: 5px 9px; font: 500 10.5px/1.4 var(--font-data); letter-spacing: 0.06em; text-transform: uppercase; pointer-events: none; }
-.cmp.left { left: 10px; }
-.cmp.right { right: 10px; }
-.legend { right: 10px; bottom: 10px; padding: 8px 10px; font-size: 0.74rem; pointer-events: none; width: 210px; }
-.legend .lbl { font: 400 9.5px/1.3 var(--font-data); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
-.legend .ramp { height: 6px; border-radius: 3px; margin: 7px 0 4px; }
-.legend .ends { display: flex; justify-content: space-between; font: 400 9.5px var(--font-data); color: var(--muted); }
-.legend .faded { display: flex; align-items: center; gap: 6px; margin-top: 7px; color: var(--muted); font-size: 0.72rem; }
-.legend .faded i { flex: none; width: 16px; height: 8px; border-radius: 2px; background: linear-gradient(90deg, #c13b5c 50%, rgba(193, 59, 92, 0.35) 50%); }
-.scale { left: 10px; bottom: 10px; padding: 5px 9px; display: flex; align-items: center; gap: 7px; font: 400 10px var(--font-data); pointer-events: none; }
-.scale-bar { height: 5px; border: 1.5px solid var(--text); border-top: 0; display: inline-block; }
-.fit { right: 10px; top: 10px; padding: 5px 11px; font-size: 0.78rem; display: none; }
+.cmp { top: 26px; padding: 4px 8px; font-size: 0.78rem; font-weight: 600; pointer-events: none; }
+.cmp.left { left: 8px; }
+.cmp.right { right: 26px; }
+.legend { right: 26px; bottom: 8px; padding: 8px 10px 9px; font-size: 0.76rem; pointer-events: none; width: 214px; }
+.legend .lbl { font-size: 0.78rem; font-weight: 600; }
+.legend .ramp { display: flex; height: 9px; margin: 7px 0 3px; border: 1px solid rgba(23, 32, 27, 0.2); }
+.legend .ramp i { flex: 1; }
+.legend .ramp.smooth { display: block; }
+.legend .ends { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); }
+.legend .faded { display: flex; align-items: center; gap: 7px; margin-top: 7px; color: var(--ink-2); font-size: 0.74rem; }
+.legend .faded i { flex: none; width: 18px; height: 9px; background: linear-gradient(90deg, #8c2618 50%, rgba(140, 38, 24, 0.38) 50%); border: 1px solid rgba(23, 32, 27, 0.2); }
+.scale { left: 8px; bottom: 8px; padding: 4px 8px; display: flex; align-items: center; gap: 7px; font-size: 0.74rem; font-weight: 500; pointer-events: none; }
+.scale-bar { height: 6px; border: 1.5px solid var(--ink); border-top: 0; display: inline-block; }
+.fit { right: 26px; top: 26px; padding: 4px 10px; font-size: 0.8rem; font-weight: 500; display: none; }
 .map.zoomed .fit { display: block; }
-.map.zoomed.comparing .fit { top: 44px; }
-.sim { left: 50%; bottom: 10px; transform: translateX(-50%); padding: 4px 9px; font: 500 10px var(--font-data); letter-spacing: 0.06em; text-transform: uppercase; color: #f7cd58; }
+.map.zoomed.comparing .fit { top: 58px; }
+.sim { left: 50%; bottom: 8px; transform: translateX(-50%); padding: 3px 8px; font-size: 0.74rem; font-weight: 700; color: #8c2618; }
 
 /* ---------------------------------------------------------------- timeline: the loss chart is the year picker */
 .timeline { display: flex; gap: 8px; align-items: stretch; }
 .play {
-  flex: none; width: 46px; border-radius: 12px; border: 1px solid var(--line); background: var(--ink-1);
+  flex: none; width: 44px; border-radius: 5px; border: 1px solid var(--ink); background: var(--sheet);
   display: grid; place-items: center;
 }
-.play:hover { border-color: var(--faint); }
-.play svg { width: 15px; height: 15px; fill: var(--text); }
+.play:hover { background: var(--ink); }
+.play:hover svg { fill: var(--sheet); }
+.play svg { width: 14px; height: 14px; fill: var(--ink); }
 .years {
   flex: 1; min-width: 0;
-  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px;
-  padding: 8px 8px 7px; border-radius: 12px; background: var(--ink-1); border: 1px solid var(--line);
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px;
+  padding: 8px 6px 6px; border-radius: 5px; background: var(--sheet); border: 1px solid var(--rule);
   touch-action: none; outline: none; cursor: pointer;
 }
-.yr { display: grid; grid-template-rows: 52px auto 4px; gap: 5px; align-items: end; min-width: 0; }
+.years:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.yr { display: grid; grid-template-rows: 54px auto 3px; gap: 5px; align-items: end; min-width: 0; }
 .yr .col { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; }
-.yr .loss { width: 100%; max-width: 44px; border-radius: 3px 3px 1px 1px; min-height: 1px; transition: opacity 0.25s; }
-.yr .ha { font: 400 8.5px var(--font-data); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.yr .base { font: 400 8.5px var(--font-data); letter-spacing: 0.08em; color: var(--faint); text-transform: uppercase; }
-.yr .y { text-align: center; font: 400 11px/1.8 var(--font-data); color: var(--muted); font-variant-numeric: tabular-nums; border-radius: 5px; }
-.yr .q { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
-.yr .q i { display: block; height: 100%; background: var(--faint); }
-.yr.after .loss, .yr.after .ha { opacity: 0.22; }
-.yr.on .y { color: var(--ink-0); background: var(--ice); font-weight: 500; }
-.yr.on .q i { background: var(--ice); }
-.years-cap { display: flex; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; color: var(--faint); font: 400 10px/1.4 var(--font-data); letter-spacing: 0.03em; padding-left: 54px; }
+.yr .loss { width: 100%; max-width: 46px; min-height: 1px; transition: opacity 0.25s; }
+.yr .ha { font-size: 0.7rem; font-variation-settings: "wdth" var(--narrow); color: var(--ink-2); white-space: nowrap; }
+.yr .base { font-size: 0.7rem; font-variation-settings: "wdth" var(--narrow); color: var(--muted); font-style: italic; }
+.yr .y { text-align: center; font-size: 0.8rem; font-weight: 500; line-height: 1.75; color: var(--ink-2); border-radius: 3px; }
+.yr .q { height: 3px; background: var(--rule-soft); overflow: hidden; }
+.yr .q i { display: block; height: 100%; background: var(--muted); }
+.yr.after .loss, .yr.after .ha { opacity: 0.25; }
+.yr.on .y { color: var(--sheet); background: var(--ink); font-weight: 600; }
+.yr.on .q i { background: var(--ink); }
+.years-cap { display: flex; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; color: var(--muted); font-size: 0.74rem; padding-left: 52px; }
 
-/* ---------------------------------------------------------------- rail */
-.rail { display: grid; gap: 12px; align-content: start; min-width: 0; }
-.panel { background: var(--ink-1); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
-.kicker { font: 400 10.5px/1.5 var(--font-data); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
-.kicker-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-.linkbtn { border: 0; background: none; padding: 0; color: var(--ice); font-size: 0.82rem; white-space: nowrap; }
-.linkbtn:hover { text-decoration: underline; }
+/* ---------------------------------------------------------------- rail: the sheet's margin, sections divided by rules */
+.rail { display: grid; align-content: start; min-width: 0; }
+.panel { padding: 18px 0 22px; min-width: 0; border-top: 1px solid var(--rule); }
+.panel:first-child { border-top: 2px solid var(--ink); }
+.label-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--ink); font-size: 0.84rem; font-weight: 600; white-space: nowrap; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.linkbtn:hover { text-decoration-thickness: 2px; }
 
-.verdict .q { font-size: 0.95rem; color: var(--muted); margin-top: 8px; text-wrap: balance; }
-.verdict .big { display: flex; align-items: flex-end; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
-.verdict .num { font-size: clamp(3.2rem, 2.6rem + 2.4vw, 4.4rem); font-weight: 600; letter-spacing: -0.05em; line-height: 0.88; font-variant-numeric: tabular-nums; }
-.verdict .num sup { font-size: 0.42em; letter-spacing: 0; vertical-align: 0.95em; margin-left: 2px; font-weight: 500; }
-.verdict .of { font-size: 0.95rem; color: var(--muted); line-height: 1.3; max-width: 12em; padding-bottom: 2px; }
-.verdict .say { margin-top: 14px; font-size: 1.02rem; line-height: 1.45; text-wrap: pretty; }
-.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin-top: 16px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-.stat { background: var(--ink-1); padding: 10px 12px; min-width: 0; }
-.stat .k { font: 400 9.5px/1.4 var(--font-data); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
-.stat .v { font-size: 1.15rem; font-weight: 500; margin-top: 3px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.stat .v small { font-size: 0.78rem; color: var(--muted); font-weight: 400; }
-.meter { display: inline-flex; gap: 3px; }
-.meter i { width: 13px; height: 5px; border-radius: 2px; background: var(--line); }
-.meter i.on { background: var(--healthy); }
-.why { margin-top: 12px; font-size: 0.84rem; color: var(--muted); line-height: 1.5; }
+.verdict .q { font-size: 0.98rem; font-style: italic; color: var(--ink-2); margin-top: 12px; text-wrap: balance; }
+.verdict .answer {
+  margin-top: 10px;
+  font-size: clamp(1.5rem, 1.3rem + 0.7vw, 1.85rem);
+  font-weight: 600;
+  font-variation-settings: "wdth" 104;
+  letter-spacing: -0.022em;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+.verdict .more { margin-top: 10px; font-size: 1rem; line-height: 1.45; color: var(--ink-2); text-wrap: pretty; max-width: 46ch; }
+.ledger { margin-top: 18px; border-top: 1px solid var(--ink); }
+.ledger > div { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--rule-soft); align-items: baseline; }
+.ledger dt { font-size: 0.82rem; font-weight: 500; color: var(--muted); font-variation-settings: "wdth" var(--narrow); }
+.ledger dd { font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ledger dd small { font-size: 0.86rem; color: var(--muted); font-weight: 400; }
+.swatch { width: 11px; height: 11px; flex: none; border: 1px solid rgba(23, 32, 27, 0.25); }
+.meter { display: inline-flex; gap: 2px; }
+.meter i { width: 14px; height: 6px; background: var(--rule-soft); }
+.meter i.on { background: var(--spruce); }
+.why { margin-top: 12px; font-size: 0.85rem; color: var(--muted); line-height: 1.5; max-width: 60ch; }
 
 /* spot */
 .spot .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-.spot .coords { font: 400 11px/1.5 var(--font-data); color: var(--text); margin-top: 5px; font-variant-numeric: tabular-nums; }
-.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 500; padding: 4px 10px; border-radius: 999px; background: var(--ink-2); border: 1px solid var(--line); white-space: nowrap; }
-.chip i { width: 8px; height: 8px; border-radius: 50%; }
-.film { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; margin-top: 14px; }
+.spot h2 { font-size: 1.08rem; font-weight: 700; letter-spacing: -0.01em; }
+.spot .coords { font-size: 0.8rem; color: var(--muted); margin-top: 2px; font-variation-settings: "wdth" var(--narrow); }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; padding: 3px 9px 3px 7px; border: 1px solid var(--rule); background: var(--sheet); border-radius: 3px; white-space: nowrap; }
+.chip i { width: 10px; height: 10px; }
+.film { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 3px; margin-top: 14px; }
 .film button { border: 0; padding: 0; background: none; display: grid; gap: 4px; min-width: 0; }
-.film canvas { width: 100%; aspect-ratio: 1; border-radius: 4px; display: block; outline: 1.5px solid transparent; outline-offset: 1px; background: var(--ink-2); }
-.film .fy { font: 400 9px var(--font-data); color: var(--faint); text-align: center; }
-.film .st { height: 3px; border-radius: 2px; background: var(--line); }
-.film button.on canvas { outline-color: var(--ice); }
-.film button.on .fy { color: var(--ice); }
-.chart { margin-top: 14px; touch-action: pan-y; cursor: ew-resize; }
+.film canvas { width: 100%; aspect-ratio: 1; display: block; outline: 2px solid transparent; outline-offset: 1px; background: var(--sheet); }
+.film .fy { font-size: 0.7rem; color: var(--muted); text-align: center; }
+.film .st { height: 4px; }
+.film button.on canvas { outline-color: var(--ink); }
+.film button.on .fy { color: var(--ink); font-weight: 700; }
+.chart { margin-top: 16px; touch-action: pan-y; cursor: ew-resize; }
 .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
-.chart text { fill: var(--faint); font: 400 9px var(--font-data); }
-.chart .grid { stroke: var(--line); }
-.chart .band { fill: rgba(134, 191, 160, 0.08); }
-.chart .bandline { stroke: rgba(134, 191, 160, 0.5); stroke-dasharray: 2 3; }
-.chart .dot { fill: var(--muted); opacity: 0.4; }
-.chart .dot.cur { fill: var(--text); opacity: 1; }
-.chart .med { stroke-width: 3.5; stroke-linecap: round; fill: none; }
-.chart .gapc { fill: #2a3438; }
-.chart .clearc { fill: var(--muted); }
-.chart .onset { stroke-width: 1; stroke-dasharray: 3 3; }
-.chart .cursor { fill: var(--ice); opacity: 0.07; }
-.spot .say { margin-top: 12px; font-size: 0.92rem; line-height: 1.5; }
-.spot .fine { margin-top: 8px; font-size: 0.78rem; color: var(--faint); line-height: 1.5; }
+.chart text { fill: var(--muted); font-size: 10.5px; font-family: var(--font); }
+.chart .grid { stroke: var(--rule-soft); }
+.chart .band { fill: rgba(46, 91, 67, 0.09); }
+.chart .bandline { stroke: rgba(46, 91, 67, 0.7); stroke-dasharray: 3 3; }
+.chart .dot { fill: var(--ink); opacity: 0.22; }
+.chart .dot.cur { opacity: 0.85; }
+.chart .med { stroke-width: 4; stroke-linecap: butt; fill: none; }
+.chart .gapc { fill: var(--rule-soft); }
+.chart .clearc { fill: var(--ink-2); }
+.chart .onset { stroke-width: 1.2; stroke-dasharray: 4 3; }
+.chart .cursor { fill: var(--ink); opacity: 0.05; }
+.chart .now { fill: var(--ink) !important; font-weight: 700; }
+.spot .say { margin-top: 12px; font-size: 0.94rem; line-height: 1.5; max-width: 60ch; }
+.spot .fine { margin-top: 8px; font-size: 0.8rem; color: var(--muted); line-height: 1.5; max-width: 60ch; }
 
-.method summary { cursor: pointer; font-weight: 500; list-style: none; display: flex; justify-content: space-between; }
+.method summary { cursor: pointer; font-weight: 700; font-size: 1.02rem; list-style: none; display: flex; justify-content: space-between; align-items: baseline; }
 .method summary::-webkit-details-marker { display: none; }
-.method summary::after { content: "+"; font-family: var(--font-data); color: var(--muted); }
-.method[open] summary::after { content: "\2212"; }
-.method p { margin-top: 10px; font-size: 0.86rem; color: var(--muted); line-height: 1.55; max-width: 68ch; }
-.method strong { color: var(--text); font-weight: 500; }
+.method summary::after { content: "Show"; font-size: 0.84rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.method[open] summary::after { content: "Hide"; }
+.method p { margin-top: 10px; font-size: 0.88rem; color: var(--ink-2); line-height: 1.55; max-width: 64ch; }
+.method strong { color: var(--ink); font-weight: 700; }
 
-/* ---------------------------------------------------------------- wide: the map owns the screen */
+/* ---------------------------------------------------------------- wide: the map owns the sheet, the rail is its margin */
 @media (min-width: 1000px) {
-  .shell { height: 100vh; grid-template-rows: auto minmax(0, 1fr); padding-block: 16px; }
-  .stage { grid-template-columns: minmax(0, 1fr) 400px; min-height: 0; }
+  .shell { height: 100vh; grid-template-rows: auto minmax(0, 1fr); padding-block: 20px; }
+  .stage { grid-template-columns: minmax(0, 1fr) 400px; gap: 28px; min-height: 0; }
   .mapzone { grid-template-rows: minmax(0, 1fr) auto auto; min-height: 0; }
   .map { height: auto; min-height: 0; }
-  .rail { overflow-y: auto; min-height: 0; padding-right: 2px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  .rail { overflow-y: auto; min-height: 0; padding-right: 6px; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+  .panel:first-child { padding-top: 14px; }
 }
 @media (min-width: 1400px) { .stage { grid-template-columns: minmax(0, 1fr) 440px; } }
 
 @media (max-width: 520px) {
-  .controls { width: 100%; }
-  .seg { flex: 1; }
+  .controls { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .seg { grid-column: 1 / -1; }
   .seg button { flex: 1; padding-inline: 4px; }
-  .tool { padding-inline: 10px; }
-  .yr { grid-template-rows: 44px auto 4px; }
-  .yr .y { font-size: 9.5px; }
+  .yr { grid-template-rows: 46px auto 3px; }
+  .yr .y { font-size: 0.72rem; }
   .yr .ha { display: none; }
-  .years { gap: 2px; padding-inline: 5px; }
-  .legend { width: 150px; padding: 6px 8px; }
-  .legend .ramp { margin: 5px 0 3px; }
+  .years { gap: 2px; padding-inline: 4px; }
+  .legend { width: 158px; padding: 6px 8px 7px; }
+  .legend .ramp { margin: 5px 0 2px; }
   .years-cap { padding-left: 0; }
+  .ledger > div { grid-template-columns: 6.5rem minmax(0, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
@@ -237,7 +268,6 @@ h1 { font-size: clamp(1.35rem, 1.1rem + 1vw, 1.75rem); font-weight: 600; letter-
 <div class="shell">
   <header class="bar">
     <div class="brand">
-      <p class="eyebrow" id="eyebrow">Sentinel-2 · 20 m · summer composites</p>
       <h1 id="title">Forest Change Explorer</h1>
       <p class="place" id="place"></p>
     </div>
@@ -248,7 +278,7 @@ h1 { font-size: clamp(1.35rem, 1.1rem + 1vw, 1.75rem); font-weight: 600; letter-
         <button role="radio" data-layer="change" aria-checked="true">Loss</button>
       </div>
       <button class="tool" id="btn-compare" aria-pressed="false">Compare</button>
-      <button class="tool" id="btn-area" aria-pressed="false">Select area</button>
+      <button class="tool" id="btn-area" aria-pressed="false">Select an area</button>
     </div>
   </header>
 
@@ -272,7 +302,7 @@ h1 { font-size: clamp(1.35rem, 1.1rem + 1vw, 1.75rem); font-weight: 600; letter-
         </button>
         <div class="years" id="years" role="slider" tabindex="0" aria-label="Year"></div>
       </div>
-      <p class="years-cap"><span id="cap-left">Forest lost each year</span><span>Line under each year: cloud-free views that summer</span></p>
+      <p class="years-cap"><span id="cap-left">Forest lost each year</span><span>Line under each year: how many cloud-free views that summer</span></p>
     </section>
 
     <aside class="rail">
@@ -301,9 +331,19 @@ const NDVI_STOPS = [
   [-0.2, [70, 56, 44]], [0.15, [128, 104, 76]], [0.35, [196, 180, 124]],
   [0.55, [140, 180, 96]], [0.75, [52, 128, 70]], [1.0, [14, 72, 42]],
 ];
-// First year of loss: early = deep violet, recent = pale gold.
-const ONSET = ["#6a2a8c", "#a23178", "#d0445d", "#ec6a45", "#f59c3c", "#f8cc58", "#fcef9e"];
-const HEALTHY = "#86bfa0";
+// First year of loss, in rust inks: early, settled loss = deep oxblood; recent, unconfirmed = pale ochre.
+// Every colour the canvas draws comes from the CSS tokens, so a theme is a stylesheet change.
+let ONSET, HEALTHY, PAPER, INK, NODATA, PLATE, WASH, NF, BASEC;
+function readTheme() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = (n) => cs.getPropertyValue(n).trim();
+  ONSET = [0, 1, 2, 3, 4, 5, 6].map((i) => v(`--loss-${i}`));
+  HEALTHY = v("--spruce"); PAPER = v("--sheet"); INK = v("--ink");
+  NODATA = hexRgb(v("--nodata"));
+  PLATE = { lo: +v("--plate-lo"), span: +v("--plate-span"), tint: hexRgb(v("--plate-tint")) };
+  WASH = v("--wash"); NF = v("--not-forest"); BASEC = v("--muted");
+  changeCache.clear();
+}
 
 function lerpStops(stops, v) {
   if (v <= stops[0][0]) return stops[0][1];
@@ -432,7 +472,7 @@ function paintNdvi(arr) {
   const id = g.createImageData(w, h);
   for (let p = 0; p < w * h; p++) {
     const o = p * 4, v = arr[p];
-    const [r, gg, b] = v === v ? lerpStops(NDVI_STOPS, v) : [40, 44, 46];
+    const [r, gg, b] = v === v ? lerpStops(NDVI_STOPS, v) : NODATA;
     id.data[o] = r; id.data[o + 1] = gg; id.data[o + 2] = b; id.data[o + 3] = 255;
   }
   g.putImageData(id, 0, 0);
@@ -445,10 +485,16 @@ function paintChange(idx) {
   const upto = S.years[idx];
   const c = canvasOf(w, h);
   const g = c.getContext("2d", { willReadFrequently: true });
-  g.filter = "grayscale(1) brightness(0.62) contrast(1.05)";
   g.drawImage(S.rgbImg[idx], 0, 0);
-  g.filter = "none";
   const id = g.getImageData(0, 0, w, h);
+  // print the imagery as a quiet plate: luminance squeezed into a mid grey-green band so both
+  // the dark early loss and the pale recent loss read against it
+  for (let p = 0; p < w * h; p++) {
+    const o = p * 4;
+    const l = (0.2126 * id.data[o] + 0.7152 * id.data[o + 1] + 0.0722 * id.data[o + 2]) / 255;
+    const t = PLATE.lo + Math.min(1, l * 1.9) * PLATE.span;
+    id.data[o] = PLATE.tint[0] * t; id.data[o + 1] = PLATE.tint[1] * t; id.data[o + 2] = PLATE.tint[2] * t;
+  }
   for (let p = 0; p < w * h; p++) {
     const y = S.onset[p];
     if (y > 0 && y <= upto) {
@@ -518,7 +564,7 @@ function draw() {
   const W = canvas.width / dpr, H = canvas.height / dpr;
   const { s, x, y } = S.view;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = "#040607";
+  ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, H);
   ctx.imageSmoothingEnabled = s < 2.5;
   const put = (src, a = 1) => { ctx.globalAlpha = a; ctx.drawImage(src, x, y, S.m.width * s, S.m.height * s); ctx.globalAlpha = 1; };
@@ -538,11 +584,14 @@ function draw() {
     ctx.beginPath(); ctx.rect(0, 0, cut, H); ctx.clip();
     put(layerSource(S.layer === "change" ? "rgb" : S.layer, 0));
     ctx.restore();
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillStyle = PAPER;
+    ctx.fillRect(cut - 2, 0, 4, H);
+    ctx.fillStyle = INK;
     ctx.fillRect(cut - 0.75, 0, 1.5, H);
-    ctx.beginPath(); ctx.arc(cut, H / 2, 15, 0, Math.PI * 2);
-    ctx.fillStyle = "#e7ece9"; ctx.fill();
-    ctx.fillStyle = "#070a0b";
+    ctx.beginPath(); ctx.arc(cut, H / 2, 16, 0, Math.PI * 2);
+    ctx.fillStyle = PAPER; ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.fillStyle = INK;
     for (const d of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cut + d * 3, H / 2 - 4.5); ctx.lineTo(cut + d * 8, H / 2); ctx.lineTo(cut + d * 3, H / 2 + 4.5); ctx.fill(); }
   }
 
@@ -554,20 +603,20 @@ function draw() {
 
 function drawArea(a, W, H) {
   const [x0, y0] = toScreen(a.x0, a.y0), [x1, y1] = toScreen(a.x1, a.y1);
-  ctx.fillStyle = "rgba(4,6,7,0.58)";
+  ctx.fillStyle = WASH;
   ctx.beginPath();
   ctx.rect(0, 0, W, H);
   ctx.rect(x0, y0, x1 - x0, y1 - y0);
   ctx.fill("evenodd");
-  ctx.strokeStyle = "rgba(169,219,232,0.95)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 2.5;
   const L = Math.min(16, (x1 - x0) / 3, (y1 - y0) / 3);
   ctx.beginPath();
   for (const [cx, cy, dx, dy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]) {
     ctx.moveTo(cx + dx * L, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + dy * L);
   }
   ctx.stroke();
-  ctx.strokeStyle = "rgba(169,219,232,0.35)";
+  ctx.strokeStyle = INK;
   ctx.lineWidth = 1;
   ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
 }
@@ -586,39 +635,44 @@ function drawReticle() {
     ctx.moveTo(cx, cy - r - arm); ctx.lineTo(cx, cy - r);
     ctx.moveTo(cx, cy + r); ctx.lineTo(cx, cy + r + arm);
   };
-  ctx.lineWidth = 3.5; ctx.strokeStyle = "rgba(0,0,0,0.6)"; path(); ctx.stroke();
-  ctx.lineWidth = 1.5; ctx.strokeStyle = "#ffffff"; path(); ctx.stroke();
+  ctx.lineWidth = 4; ctx.strokeStyle = PAPER; path(); ctx.stroke();
+  ctx.lineWidth = 1.75; ctx.strokeStyle = INK; path(); ctx.stroke();
 }
 
+// Neatline margin, as on a printed sheet: a paper band along the top and right edges carries
+// the coordinate ticks, so labels never sit on the imagery or collide with map furniture.
+const BAND = 18;
 function drawGraticule(W, H) {
   const [w, s, e, n] = S.m.bbox;
   const pxLon = (lon) => toScreen(((lon - w) / (e - w)) * S.m.width, 0)[0];
   const pxLat = (lat) => toScreen(0, ((n - lat) / (n - s)) * S.m.height)[1];
   const pxPerDeg = (S.m.width * S.view.s) / (e - w);
-  const step = [0.005, 0.01, 0.02, 0.05].find((d) => d * pxPerDeg > 70) || 0.05;
-  ctx.font = "400 9px 'Martian Mono', ui-monospace, monospace";
-  ctx.fillStyle = "rgba(231,236,233,0.8)";
-  ctx.strokeStyle = "rgba(231,236,233,0.6)";
+  const step = [0.005, 0.01, 0.02, 0.05].find((d) => d * pxPerDeg > 74) || 0.05;
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, BAND);
+  ctx.fillRect(W - BAND, 0, BAND, H);
+  ctx.fillStyle = INK;
+  ctx.fillRect(0, BAND - 1, W - BAND, 1);
+  ctx.fillRect(W - BAND, BAND - 1, 1, H - BAND + 1);
+  ctx.font = "500 10px Archivo, ui-sans-serif, system-ui, sans-serif";
+  ctx.strokeStyle = INK;
   ctx.lineWidth = 1;
-  ctx.shadowColor = "rgba(0,0,0,0.9)"; ctx.shadowBlur = 3;
-  ctx.textBaseline = "top"; ctx.textAlign = "center";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
   for (let lon = Math.ceil(w / step) * step; lon < e; lon += step) {
     const x = pxLon(lon);
-    if (x < 40 || x > W - 40) continue;
-    if (x < 250 && !$("#readout").hidden) continue;
-    if (!S.touched && Math.abs(x - W / 2) < 175) continue; // under the hint
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 6); ctx.stroke();
-    if (!S.compare) ctx.fillText(`${lon.toFixed(3)}°E`, x, 8);
+    if (x < 34 || x > W - BAND - 34) continue;
+    ctx.beginPath(); ctx.moveTo(x, BAND - 5); ctx.lineTo(x, BAND + 4); ctx.stroke();
+    ctx.fillText(`${lon.toFixed(3)}° E`, x, BAND / 2 - 1);
   }
-  ctx.textAlign = "right"; ctx.textBaseline = "middle";
   const latStep = step / 1.6;
   for (let lat = Math.ceil(s / latStep) * latStep; lat < n; lat += latStep) {
     const y = pxLat(lat);
-    if (y < 60 || y > H - 50) continue;
-    ctx.beginPath(); ctx.moveTo(W, y); ctx.lineTo(W - 6, y); ctx.stroke();
-    ctx.fillText(`${lat.toFixed(3)}°N`, W - 9, y);
+    if (y < BAND + 34 || y > H - 34) continue;
+    ctx.beginPath(); ctx.moveTo(W - BAND - 4, y); ctx.lineTo(W - BAND + 5, y); ctx.stroke();
+    ctx.save(); ctx.translate(W - BAND / 2 + 1, y); ctx.rotate(-Math.PI / 2);
+    ctx.fillText(`${lat.toFixed(3)}° N`, 0, 0);
+    ctx.restore();
   }
-  ctx.shadowBlur = 0;
 }
 
 function drawScale() {
@@ -650,7 +704,7 @@ function renderReadout() {
     : o > 0 && o <= yr ? `lost ${o}${regreened(p, S.yearIdx) ? ", green again" : ""}`
     : o > 0 ? `intact (lost ${o})` : "intact";
   if (was) requestDraw();
-  el.innerHTML = `<b>${lat.toFixed(5)}</b> N  <b>${lon.toFixed(5)}</b> E\nNDVI ${yr}  <b>${v === v ? v.toFixed(2) : "cloud"}</b>\nCanopy     <b>${state}</b>`;
+  el.innerHTML = `<span>Position</span><b>${lat.toFixed(5)}° N, ${lon.toFixed(5)}° E</b><span>NDVI ${yr}</span><b>${v === v ? v.toFixed(2) : "no clear view"}</b><span>Canopy</span><b>${state}</b>`;
   el.hidden = false;
 }
 
@@ -776,7 +830,7 @@ $("#btn-compare").addEventListener("click", () => {
 function setAreaMode(on) {
   S.areaMode = on;
   $("#btn-area").setAttribute("aria-pressed", String(on));
-  $("#btn-area").textContent = on ? "Drag on the map" : "Select area";
+  $("#btn-area").textContent = on ? "Drag on the map" : "Select an area";
 }
 $("#btn-area").addEventListener("click", () => setAreaMode(!S.areaMode));
 function renderCompareLabels() {
@@ -784,22 +838,22 @@ function renderCompareLabels() {
   $("#legend").hidden = S.compare;
   if (!S.compare) return;
   const name = { rgb: "Imagery", ndvi: "Vegetation", change: "Loss" };
-  $("#cmp-left").textContent = `${S.years[0]} · ${S.layer === "change" ? "Imagery" : name[S.layer]}`;
-  $("#cmp-right").textContent = `${S.years[S.yearIdx]} · ${name[S.layer]}`;
+  $("#cmp-left").textContent = `${S.years[0]} ${(S.layer === "change" ? "imagery" : name[S.layer].toLowerCase())}`;
+  $("#cmp-right").textContent = `${S.years[S.yearIdx]} ${name[S.layer].toLowerCase()}`;
 }
 function renderLegend() {
   const el = $("#legend");
-  if (S.layer === "rgb") { el.innerHTML = `<div class="lbl">True colour · summer median</div>`; return; }
+  if (S.layer === "rgb") { el.innerHTML = `<div class="lbl">True colour, summer median</div>`; return; }
   if (S.layer === "ndvi") {
     const ramp = NDVI_STOPS.map(([v, c]) => `rgb(${c.map(Math.round)}) ${((v + 0.2) / 1.2) * 100}%`).join(",");
-    el.innerHTML = `<div class="lbl">Vegetation index (NDVI)</div><div class="ramp" style="background:linear-gradient(90deg,${ramp})"></div><div class="ends"><span>bare</span><span>dense</span></div>`;
+    el.innerHTML = `<div class="lbl">Vegetation index (NDVI)</div><div class="ramp smooth" style="background:linear-gradient(90deg,${ramp})"></div><div class="ends"><span>Bare</span><span>Dense</span></div>`;
     return;
   }
   const ys = S.years.filter((y) => y >= firstChangeYear());
-  el.innerHTML = `<div class="lbl">Canopy lost · first year</div>
-    <div class="ramp" style="background:linear-gradient(90deg,${ys.map((y) => onsetColour(y)).join(",")})"></div>
+  el.innerHTML = `<div class="lbl">Year the canopy was lost</div>
+    <div class="ramp">${ys.map((y) => `<i style="background:${onsetColour(y)}"></i>`).join("")}</div>
     <div class="ends"><span>${ys[0]}</span><span>${ys.at(-1)}</span></div>
-    <div class="faded"><i></i>Faded: green again</div>`;
+    <div class="faded"><i></i>Faded: green again, not forest</div>`;
 }
 
 // ------------------------------------------------------------------ scope statistics
@@ -925,36 +979,37 @@ $("#btn-play").addEventListener("click", () => {
 function renderVerdict() {
   const st = scopeCache;
   const conf = confidence(st);
-  const scope = st.whole ? `Whole area · ${fmtArea(st.areaHa)}` : `Selected area · ${fmtArea(st.areaHa)}`;
+  const scope = st.whole ? `Whole area, ${fmtArea(st.areaHa)}` : `Selected area, ${fmtArea(st.areaHa)}`;
   const isBase = S.m.baselineYears.includes(st.upto);
   const ranked = [...st.byYear.entries()].filter(([y, n]) => n > 0 && y <= st.upto).sort((a, b) => b[1] - a[1]);
   const peak = ranked[0];
-  let say;
-  if (isBase) say = `${st.upto} is part of the baseline that everything else is measured against. Move the timeline forward to see change.`;
-  else if (st.forestHa < 1) say = "There was no dense forest here in the baseline years, so there is nothing to lose.";
-  else if (st.lostHa < 0.5) say = `No lasting canopy loss by ${st.upto} across ${fmtArea(st.forestHa)} of forest.`;
+  const pct = Math.round(st.share * 100);
+  let answer, more = "";
+  if (isBase) answer = `${st.upto} is part of the baseline that everything else is measured against.`, more = "Move the timeline forward to see change.";
+  else if (st.forestHa < 1) answer = "There was no dense forest here in the baseline years, so there is nothing to lose.";
+  else if (st.lostHa < 0.5) answer = `No lasting canopy loss by ${st.upto} across ${fmtArea(st.forestHa)} of forest.`;
   else {
     const two = ranked.length > 1 && ranked[1][1] > 0.6 * peak[1] ? [ranked[0][0], ranked[1][0]].sort() : null;
-    say = `Most of it died in ${two ? `${two[0]} and ${two[1]}` : peak[0]}.`;
+    answer = `By summer ${st.upto}, ${pct}% of the forest had lost its canopy. Most of it died in ${two ? `${two[0]} and ${two[1]}` : peak[0]}.`;
     if (st.greenShare > 0.05) {
       const g = st.greenShare;
-      const frac = g > 0.45 && g < 0.58 ? "About half" : g >= 0.58 ? `${Math.round(g * 100)}%` : `${Math.round(g * 100)}%`;
-      say += ` ${frac} of that ground is green again, mostly grass, shrubs and young trees rather than forest.`;
+      const frac = g > 0.45 && g < 0.58 ? "About half" : `${Math.round(g * 100)}%`;
+      more = `${frac} of that ground is green again: grass, shrubs and young trees, not forest.`;
     }
   }
+  const row = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
   $("#verdict").innerHTML = `
-    <div class="kicker-row"><span class="kicker">${scope}</span>
+    <div class="label-row"><span class="label">${scope}</span>
       ${st.whole ? `<button class="linkbtn" id="v-select">Select an area</button>` : `<button class="linkbtn" id="v-clear">Use whole area</button>`}</div>
     <p class="q">Where has the forest died, since when, and how sure can we be?</p>
-    <div class="big"><span class="num">${isBase ? "0" : Math.round(st.share * 100)}<sup>%</sup></span>
-      <span class="of">of the forest had lost its canopy by summer ${st.upto}</span></div>
-    <p class="say">${say}</p>
-    <div class="stats">
-      <div class="stat"><div class="k">Canopy lost</div><div class="v">${fmtArea(st.lostHa)} <small>of ${fmtArea(st.forestHa)}</small></div></div>
-      <div class="stat"><div class="k">Peak year</div><div class="v">${peak && !isBase ? `<span style="color:${onsetColour(peak[0])}">${peak[0]}</span> <small>${fmtArea(peak[1] * haPerPx())}</small>` : "–"}</div></div>
-      <div class="stat"><div class="k">Green again</div><div class="v">${st.lostHa >= 0.5 ? `${Math.round(st.greenShare * 100)}% <small>of lost area</small>` : "–"}</div></div>
-      <div class="stat"><div class="k">Confidence</div><div class="v">${conf.label}${conf.level ? `<span class="meter">${[1, 2, 3].map((k) => `<i class="${k <= conf.level ? "on" : ""}"></i>`).join("")}</span>` : ""}</div></div>
-    </div>
+    <h2 class="answer">${answer}</h2>
+    ${more ? `<p class="more">${more}</p>` : ""}
+    <dl class="ledger">
+      ${row("Canopy lost", `${isBase ? "None yet" : fmtArea(st.lostHa)} <small>of ${fmtArea(st.forestHa)} of forest</small>`)}
+      ${row("Worst year", peak && !isBase ? `<i class="swatch" style="background:${onsetColour(peak[0])}"></i>${peak[0]} <small>${fmtArea(peak[1] * haPerPx())} lost</small>` : "None")}
+      ${row("Green again", st.lostHa >= 0.5 ? `${Math.round(st.greenShare * 100)}% <small>of the lost ground</small>` : "Not applicable")}
+      ${row("Confidence", `${conf.label}${conf.level ? `<span class="meter" aria-hidden="true">${[1, 2, 3].map((k) => `<i class="${k <= conf.level ? "on" : ""}"></i>`).join("")}</span>` : ""}`)}
+    </dl>
     <p class="why">${conf.why}</p>`;
   $("#v-select")?.addEventListener("click", () => { setAreaMode(true); if (innerWidth < 1000) mapEl.scrollIntoView({ behavior: "smooth", block: "center" }); });
   $("#v-clear")?.addEventListener("click", () => { S.area = null; scopeChanged(); });
@@ -979,7 +1034,7 @@ function spotModel() {
   return { col, row, pts, summers, base, thr, onset, stateOf };
 }
 function stateColour(st, onset) {
-  return { nf: "#4a5552", base: "#8b9793", ok: HEALTHY, lost: onsetColour(onset), green: onsetColour(onset) + "66" }[st];
+  return { nf: NF, base: BASEC, ok: HEALTHY, lost: onsetColour(onset), green: onsetColour(onset) + "66" }[st];
 }
 
 function renderSpot() {
@@ -991,7 +1046,7 @@ function renderSpot() {
   const yr = S.years[S.yearIdx];
 
   let chip;
-  if (M.onset === 0) chip = `<span class="chip"><i style="background:#4a5552"></i>Not forest in baseline</span>`;
+  if (M.onset === 0) chip = `<span class="chip"><i style="background:${NF}"></i>Not forest in baseline</span>`;
   else if (M.onset > 0) {
     const green = cur.v === cur.v && cur.v >= M.base - M.thr && yr >= M.onset;
     chip = `<span class="chip"><i style="background:${onsetColour(M.onset)}"></i>${green ? `Lost ${M.onset}, green again` : `Canopy lost ${M.onset}`}</span>`;
@@ -1008,8 +1063,8 @@ function renderSpot() {
 
   const clear = M.pts.filter((v) => v === v).length;
   $("#spot").innerHTML = `
-    <div class="head"><div><div class="kicker">Spot history · 200 m square</div>
-      <div class="coords">${lat.toFixed(5)}° N  ${lon.toFixed(5)}° E</div></div>${chip}</div>
+    <div class="head"><div><h2>This 200 m square, every summer</h2>
+      <div class="coords">${lat.toFixed(5)}° N, ${lon.toFixed(5)}° E</div></div>${chip}</div>
     <div class="film" id="film">${S.years.map((y, i) => `<button data-i="${i}" class="${i === S.yearIdx ? "on" : ""}" aria-label="Summer ${y}">
       <canvas width="72" height="72"></canvas><span class="st" style="background:${stateColour(M.stateOf(i), M.onset)}"></span><span class="fy">${String(y).slice(2)}</span></button>`).join("")}</div>
     <div class="chart" id="chart">${chartSvg(M)}</div>
@@ -1023,9 +1078,9 @@ function renderSpot() {
     const sx = (M.col + 0.5) * c - span / 2, sy = (M.row + 0.5) * c - span / 2;
     g.imageSmoothingEnabled = false;
     g.drawImage(S.rgbImg[i], sx, sy, span, span, 0, 0, 72, 72);
-    g.strokeStyle = "rgba(255,255,255,0.85)";
-    g.lineWidth = 1.5;
-    g.strokeRect(24, 24, 24, 24);
+    g.strokeStyle = "rgba(255,255,255,0.9)";
+    g.lineWidth = 1;
+    g.strokeRect(24.5, 24.5, 23, 23);
     b.addEventListener("click", () => { stopPlay(); setYear(i); });
   });
   const svg = $("#chart svg");
@@ -1058,7 +1113,7 @@ function chartSvg(M) {
   s += `<rect class="cursor" x="${yA(yr)}" y="${T - 6}" width="${yA(yr + 1) - yA(yr)}" height="${H - T - B + 20}"/>`;
   for (const v of [0, 0.25, 0.5, 0.75, 1]) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L - 6}" y="${Y(v) + 3}" text-anchor="end">${v}</text>`;
   const short = W < 420;
-  for (const y of S.years) s += `<text x="${(yA(y) + yA(y + 1)) / 2}" y="${H - 6}" text-anchor="middle"${y === yr ? ' style="fill:var(--ice)"' : ""}>${short ? "’" + String(y).slice(2) : y}</text>`;
+  for (const y of S.years) s += `<text x="${(yA(y) + yA(y + 1)) / 2}" y="${H - 6}" text-anchor="middle"${y === yr ? ' class="now"' : ""}>${short ? "’" + String(y).slice(2) : y}</text>`;
   if (M.base === M.base) {
     s += `<rect class="band" x="${L}" width="${W - L - R}" y="${Y(M.base)}" height="${Y(M.base - M.thr) - Y(M.base)}"/>`;
     s += `<line class="bandline" x1="${L}" x2="${W - R}" y1="${Y(M.base - M.thr)}" y2="${Y(M.base - M.thr)}"/>`;
@@ -1094,11 +1149,11 @@ function renderMethod() {
 
 // ------------------------------------------------------------------ boot
 (async function boot() {
+  readTheme();
   try { await load(); }
   catch (err) { $("#verdict").innerHTML = `<p>Could not load the data: ${err.message}. Check that the data folder sits next to this page.</p>`; throw err; }
   $("#title").textContent = "Forest Change Explorer";
-  $("#place").textContent = S.m.place;
-  $("#eyebrow").textContent = `${S.m.simulated ? "Simulated" : "Sentinel-2"} · ${S.m.pixelSizeM} m · ${S.years[0]}–${S.years.at(-1)} · ${S.m.series.dates.length} passes`;
+  $("#place").textContent = `${S.m.place}. ${S.m.simulated ? "Simulated data" : "Sentinel-2"}, every summer from ${S.years[0]} to ${S.years.at(-1)}: ${S.m.series.dates.length} passes at ${S.m.pixelSizeM} m.`;
   $("#sim-badge").hidden = !S.m.simulated;
   renderLegend();
   renderMethod();

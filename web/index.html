@@ -6,7 +6,7 @@
 <title>Forest Change Explorer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600;700&family=Martian+Mono:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap">
 <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
@@ -14,7 +14,6 @@
 <div class="shell">
   <header class="bar">
     <div class="brand">
-      <p class="eyebrow" id="eyebrow">Sentinel-2 · 20 m · summer composites</p>
       <h1 id="title">Forest Change Explorer</h1>
       <p class="place" id="place"></p>
     </div>
@@ -25,7 +24,7 @@
         <button role="radio" data-layer="change" aria-checked="true">Loss</button>
       </div>
       <button class="tool" id="btn-compare" aria-pressed="false">Compare</button>
-      <button class="tool" id="btn-area" aria-pressed="false">Select area</button>
+      <button class="tool" id="btn-area" aria-pressed="false">Select an area</button>
     </div>
   </header>
 
@@ -49,7 +48,7 @@
         </button>
         <div class="years" id="years" role="slider" tabindex="0" aria-label="Year"></div>
       </div>
-      <p class="years-cap"><span id="cap-left">Forest lost each year</span><span>Line under each year: cloud-free views that summer</span></p>
+      <p class="years-cap"><span id="cap-left">Forest lost each year</span><span>Line under each year: how many cloud-free views that summer</span></p>
     </section>
 
     <aside class="rail">

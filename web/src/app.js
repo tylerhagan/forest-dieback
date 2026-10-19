@@ -12,9 +12,19 @@ const NDVI_STOPS = [
   [-0.2, [70, 56, 44]], [0.15, [128, 104, 76]], [0.35, [196, 180, 124]],
   [0.55, [140, 180, 96]], [0.75, [52, 128, 70]], [1.0, [14, 72, 42]],
 ];
-// First year of loss: early = deep violet, recent = pale gold.
-const ONSET = ["#6a2a8c", "#a23178", "#d0445d", "#ec6a45", "#f59c3c", "#f8cc58", "#fcef9e"];
-const HEALTHY = "#86bfa0";
+// First year of loss, in rust inks: early, settled loss = deep oxblood; recent, unconfirmed = pale ochre.
+// Every colour the canvas draws comes from the CSS tokens, so a theme is a stylesheet change.
+let ONSET, HEALTHY, PAPER, INK, NODATA, PLATE, WASH, NF, BASEC;
+function readTheme() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = (n) => cs.getPropertyValue(n).trim();
+  ONSET = [0, 1, 2, 3, 4, 5, 6].map((i) => v(`--loss-${i}`));
+  HEALTHY = v("--spruce"); PAPER = v("--sheet"); INK = v("--ink");
+  NODATA = hexRgb(v("--nodata"));
+  PLATE = { lo: +v("--plate-lo"), span: +v("--plate-span"), tint: hexRgb(v("--plate-tint")) };
+  WASH = v("--wash"); NF = v("--not-forest"); BASEC = v("--muted");
+  changeCache.clear();
+}
 
 function lerpStops(stops, v) {
   if (v <= stops[0][0]) return stops[0][1];
@@ -143,7 +153,7 @@ function paintNdvi(arr) {
   const id = g.createImageData(w, h);
   for (let p = 0; p < w * h; p++) {
     const o = p * 4, v = arr[p];
-    const [r, gg, b] = v === v ? lerpStops(NDVI_STOPS, v) : [40, 44, 46];
+    const [r, gg, b] = v === v ? lerpStops(NDVI_STOPS, v) : NODATA;
     id.data[o] = r; id.data[o + 1] = gg; id.data[o + 2] = b; id.data[o + 3] = 255;
   }
   g.putImageData(id, 0, 0);
@@ -156,10 +166,16 @@ function paintChange(idx) {
   const upto = S.years[idx];
   const c = canvasOf(w, h);
   const g = c.getContext("2d", { willReadFrequently: true });
-  g.filter = "grayscale(1) brightness(0.62) contrast(1.05)";
   g.drawImage(S.rgbImg[idx], 0, 0);
-  g.filter = "none";
   const id = g.getImageData(0, 0, w, h);
+  // print the imagery as a quiet plate: luminance squeezed into a mid grey-green band so both
+  // the dark early loss and the pale recent loss read against it
+  for (let p = 0; p < w * h; p++) {
+    const o = p * 4;
+    const l = (0.2126 * id.data[o] + 0.7152 * id.data[o + 1] + 0.0722 * id.data[o + 2]) / 255;
+    const t = PLATE.lo + Math.min(1, l * 1.9) * PLATE.span;
+    id.data[o] = PLATE.tint[0] * t; id.data[o + 1] = PLATE.tint[1] * t; id.data[o + 2] = PLATE.tint[2] * t;
+  }
   for (let p = 0; p < w * h; p++) {
     const y = S.onset[p];
     if (y > 0 && y <= upto) {
@@ -229,7 +245,7 @@ function draw() {
   const W = canvas.width / dpr, H = canvas.height / dpr;
   const { s, x, y } = S.view;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = "#040607";
+  ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, H);
   ctx.imageSmoothingEnabled = s < 2.5;
   const put = (src, a = 1) => { ctx.globalAlpha = a; ctx.drawImage(src, x, y, S.m.width * s, S.m.height * s); ctx.globalAlpha = 1; };
@@ -249,11 +265,14 @@ function draw() {
     ctx.beginPath(); ctx.rect(0, 0, cut, H); ctx.clip();
     put(layerSource(S.layer === "change" ? "rgb" : S.layer, 0));
     ctx.restore();
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillStyle = PAPER;
+    ctx.fillRect(cut - 2, 0, 4, H);
+    ctx.fillStyle = INK;
     ctx.fillRect(cut - 0.75, 0, 1.5, H);
-    ctx.beginPath(); ctx.arc(cut, H / 2, 15, 0, Math.PI * 2);
-    ctx.fillStyle = "#e7ece9"; ctx.fill();
-    ctx.fillStyle = "#070a0b";
+    ctx.beginPath(); ctx.arc(cut, H / 2, 16, 0, Math.PI * 2);
+    ctx.fillStyle = PAPER; ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.fillStyle = INK;
     for (const d of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cut + d * 3, H / 2 - 4.5); ctx.lineTo(cut + d * 8, H / 2); ctx.lineTo(cut + d * 3, H / 2 + 4.5); ctx.fill(); }
   }
 
@@ -265,20 +284,20 @@ function draw() {
 
 function drawArea(a, W, H) {
   const [x0, y0] = toScreen(a.x0, a.y0), [x1, y1] = toScreen(a.x1, a.y1);
-  ctx.fillStyle = "rgba(4,6,7,0.58)";
+  ctx.fillStyle = WASH;
   ctx.beginPath();
   ctx.rect(0, 0, W, H);
   ctx.rect(x0, y0, x1 - x0, y1 - y0);
   ctx.fill("evenodd");
-  ctx.strokeStyle = "rgba(169,219,232,0.95)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 2.5;
   const L = Math.min(16, (x1 - x0) / 3, (y1 - y0) / 3);
   ctx.beginPath();
   for (const [cx, cy, dx, dy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]) {
     ctx.moveTo(cx + dx * L, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + dy * L);
   }
   ctx.stroke();
-  ctx.strokeStyle = "rgba(169,219,232,0.35)";
+  ctx.strokeStyle = INK;
   ctx.lineWidth = 1;
   ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
 }
@@ -297,39 +316,44 @@ function drawReticle() {
     ctx.moveTo(cx, cy - r - arm); ctx.lineTo(cx, cy - r);
     ctx.moveTo(cx, cy + r); ctx.lineTo(cx, cy + r + arm);
   };
-  ctx.lineWidth = 3.5; ctx.strokeStyle = "rgba(0,0,0,0.6)"; path(); ctx.stroke();
-  ctx.lineWidth = 1.5; ctx.strokeStyle = "#ffffff"; path(); ctx.stroke();
+  ctx.lineWidth = 4; ctx.strokeStyle = PAPER; path(); ctx.stroke();
+  ctx.lineWidth = 1.75; ctx.strokeStyle = INK; path(); ctx.stroke();
 }
 
+// Neatline margin, as on a printed sheet: a paper band along the top and right edges carries
+// the coordinate ticks, so labels never sit on the imagery or collide with map furniture.
+const BAND = 18;
 function drawGraticule(W, H) {
   const [w, s, e, n] = S.m.bbox;
   const pxLon = (lon) => toScreen(((lon - w) / (e - w)) * S.m.width, 0)[0];
   const pxLat = (lat) => toScreen(0, ((n - lat) / (n - s)) * S.m.height)[1];
   const pxPerDeg = (S.m.width * S.view.s) / (e - w);
-  const step = [0.005, 0.01, 0.02, 0.05].find((d) => d * pxPerDeg > 70) || 0.05;
-  ctx.font = "400 9px 'Martian Mono', ui-monospace, monospace";
-  ctx.fillStyle = "rgba(231,236,233,0.8)";
-  ctx.strokeStyle = "rgba(231,236,233,0.6)";
+  const step = [0.005, 0.01, 0.02, 0.05].find((d) => d * pxPerDeg > 74) || 0.05;
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, BAND);
+  ctx.fillRect(W - BAND, 0, BAND, H);
+  ctx.fillStyle = INK;
+  ctx.fillRect(0, BAND - 1, W - BAND, 1);
+  ctx.fillRect(W - BAND, BAND - 1, 1, H - BAND + 1);
+  ctx.font = "500 10px Archivo, ui-sans-serif, system-ui, sans-serif";
+  ctx.strokeStyle = INK;
   ctx.lineWidth = 1;
-  ctx.shadowColor = "rgba(0,0,0,0.9)"; ctx.shadowBlur = 3;
-  ctx.textBaseline = "top"; ctx.textAlign = "center";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
   for (let lon = Math.ceil(w / step) * step; lon < e; lon += step) {
     const x = pxLon(lon);
-    if (x < 40 || x > W - 40) continue;
-    if (x < 250 && !$("#readout").hidden) continue;
-    if (!S.touched && Math.abs(x - W / 2) < 175) continue; // under the hint
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 6); ctx.stroke();
-    if (!S.compare) ctx.fillText(`${lon.toFixed(3)}°E`, x, 8);
+    if (x < 34 || x > W - BAND - 34) continue;
+    ctx.beginPath(); ctx.moveTo(x, BAND - 5); ctx.lineTo(x, BAND + 4); ctx.stroke();
+    ctx.fillText(`${lon.toFixed(3)}° E`, x, BAND / 2 - 1);
   }
-  ctx.textAlign = "right"; ctx.textBaseline = "middle";
   const latStep = step / 1.6;
   for (let lat = Math.ceil(s / latStep) * latStep; lat < n; lat += latStep) {
     const y = pxLat(lat);
-    if (y < 60 || y > H - 50) continue;
-    ctx.beginPath(); ctx.moveTo(W, y); ctx.lineTo(W - 6, y); ctx.stroke();
-    ctx.fillText(`${lat.toFixed(3)}°N`, W - 9, y);
+    if (y < BAND + 34 || y > H - 34) continue;
+    ctx.beginPath(); ctx.moveTo(W - BAND - 4, y); ctx.lineTo(W - BAND + 5, y); ctx.stroke();
+    ctx.save(); ctx.translate(W - BAND / 2 + 1, y); ctx.rotate(-Math.PI / 2);
+    ctx.fillText(`${lat.toFixed(3)}° N`, 0, 0);
+    ctx.restore();
   }
-  ctx.shadowBlur = 0;
 }
 
 function drawScale() {
@@ -361,7 +385,7 @@ function renderReadout() {
     : o > 0 && o <= yr ? `lost ${o}${regreened(p, S.yearIdx) ? ", green again" : ""}`
     : o > 0 ? `intact (lost ${o})` : "intact";
   if (was) requestDraw();
-  el.innerHTML = `<b>${lat.toFixed(5)}</b> N  <b>${lon.toFixed(5)}</b> E\nNDVI ${yr}  <b>${v === v ? v.toFixed(2) : "cloud"}</b>\nCanopy     <b>${state}</b>`;
+  el.innerHTML = `<span>Position</span><b>${lat.toFixed(5)}° N, ${lon.toFixed(5)}° E</b><span>NDVI ${yr}</span><b>${v === v ? v.toFixed(2) : "no clear view"}</b><span>Canopy</span><b>${state}</b>`;
   el.hidden = false;
 }
 
@@ -487,7 +511,7 @@ $("#btn-compare").addEventListener("click", () => {
 function setAreaMode(on) {
   S.areaMode = on;
   $("#btn-area").setAttribute("aria-pressed", String(on));
-  $("#btn-area").textContent = on ? "Drag on the map" : "Select area";
+  $("#btn-area").textContent = on ? "Drag on the map" : "Select an area";
 }
 $("#btn-area").addEventListener("click", () => setAreaMode(!S.areaMode));
 function renderCompareLabels() {
@@ -495,22 +519,22 @@ function renderCompareLabels() {
   $("#legend").hidden = S.compare;
   if (!S.compare) return;
   const name = { rgb: "Imagery", ndvi: "Vegetation", change: "Loss" };
-  $("#cmp-left").textContent = `${S.years[0]} · ${S.layer === "change" ? "Imagery" : name[S.layer]}`;
-  $("#cmp-right").textContent = `${S.years[S.yearIdx]} · ${name[S.layer]}`;
+  $("#cmp-left").textContent = `${S.years[0]} ${(S.layer === "change" ? "imagery" : name[S.layer].toLowerCase())}`;
+  $("#cmp-right").textContent = `${S.years[S.yearIdx]} ${name[S.layer].toLowerCase()}`;
 }
 function renderLegend() {
   const el = $("#legend");
-  if (S.layer === "rgb") { el.innerHTML = `<div class="lbl">True colour · summer median</div>`; return; }
+  if (S.layer === "rgb") { el.innerHTML = `<div class="lbl">True colour, summer median</div>`; return; }
   if (S.layer === "ndvi") {
     const ramp = NDVI_STOPS.map(([v, c]) => `rgb(${c.map(Math.round)}) ${((v + 0.2) / 1.2) * 100}%`).join(",");
-    el.innerHTML = `<div class="lbl">Vegetation index (NDVI)</div><div class="ramp" style="background:linear-gradient(90deg,${ramp})"></div><div class="ends"><span>bare</span><span>dense</span></div>`;
+    el.innerHTML = `<div class="lbl">Vegetation index (NDVI)</div><div class="ramp smooth" style="background:linear-gradient(90deg,${ramp})"></div><div class="ends"><span>Bare</span><span>Dense</span></div>`;
     return;
   }
   const ys = S.years.filter((y) => y >= firstChangeYear());
-  el.innerHTML = `<div class="lbl">Canopy lost · first year</div>
-    <div class="ramp" style="background:linear-gradient(90deg,${ys.map((y) => onsetColour(y)).join(",")})"></div>
+  el.innerHTML = `<div class="lbl">Year the canopy was lost</div>
+    <div class="ramp">${ys.map((y) => `<i style="background:${onsetColour(y)}"></i>`).join("")}</div>
     <div class="ends"><span>${ys[0]}</span><span>${ys.at(-1)}</span></div>
-    <div class="faded"><i></i>Faded: green again</div>`;
+    <div class="faded"><i></i>Faded: green again, not forest</div>`;
 }
 
 // ------------------------------------------------------------------ scope statistics
@@ -636,36 +660,37 @@ $("#btn-play").addEventListener("click", () => {
 function renderVerdict() {
   const st = scopeCache;
   const conf = confidence(st);
-  const scope = st.whole ? `Whole area · ${fmtArea(st.areaHa)}` : `Selected area · ${fmtArea(st.areaHa)}`;
+  const scope = st.whole ? `Whole area, ${fmtArea(st.areaHa)}` : `Selected area, ${fmtArea(st.areaHa)}`;
   const isBase = S.m.baselineYears.includes(st.upto);
   const ranked = [...st.byYear.entries()].filter(([y, n]) => n > 0 && y <= st.upto).sort((a, b) => b[1] - a[1]);
   const peak = ranked[0];
-  let say;
-  if (isBase) say = `${st.upto} is part of the baseline that everything else is measured against. Move the timeline forward to see change.`;
-  else if (st.forestHa < 1) say = "There was no dense forest here in the baseline years, so there is nothing to lose.";
-  else if (st.lostHa < 0.5) say = `No lasting canopy loss by ${st.upto} across ${fmtArea(st.forestHa)} of forest.`;
+  const pct = Math.round(st.share * 100);
+  let answer, more = "";
+  if (isBase) answer = `${st.upto} is part of the baseline that everything else is measured against.`, more = "Move the timeline forward to see change.";
+  else if (st.forestHa < 1) answer = "There was no dense forest here in the baseline years, so there is nothing to lose.";
+  else if (st.lostHa < 0.5) answer = `No lasting canopy loss by ${st.upto} across ${fmtArea(st.forestHa)} of forest.`;
   else {
     const two = ranked.length > 1 && ranked[1][1] > 0.6 * peak[1] ? [ranked[0][0], ranked[1][0]].sort() : null;
-    say = `Most of it died in ${two ? `${two[0]} and ${two[1]}` : peak[0]}.`;
+    answer = `By summer ${st.upto}, ${pct}% of the forest had lost its canopy. Most of it died in ${two ? `${two[0]} and ${two[1]}` : peak[0]}.`;
     if (st.greenShare > 0.05) {
       const g = st.greenShare;
-      const frac = g > 0.45 && g < 0.58 ? "About half" : g >= 0.58 ? `${Math.round(g * 100)}%` : `${Math.round(g * 100)}%`;
-      say += ` ${frac} of that ground is green again, mostly grass, shrubs and young trees rather than forest.`;
+      const frac = g > 0.45 && g < 0.58 ? "About half" : `${Math.round(g * 100)}%`;
+      more = `${frac} of that ground is green again: grass, shrubs and young trees, not forest.`;
     }
   }
+  const row = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
   $("#verdict").innerHTML = `
-    <div class="kicker-row"><span class="kicker">${scope}</span>
+    <div class="label-row"><span class="label">${scope}</span>
       ${st.whole ? `<button class="linkbtn" id="v-select">Select an area</button>` : `<button class="linkbtn" id="v-clear">Use whole area</button>`}</div>
     <p class="q">Where has the forest died, since when, and how sure can we be?</p>
-    <div class="big"><span class="num">${isBase ? "0" : Math.round(st.share * 100)}<sup>%</sup></span>
-      <span class="of">of the forest had lost its canopy by summer ${st.upto}</span></div>
-    <p class="say">${say}</p>
-    <div class="stats">
-      <div class="stat"><div class="k">Canopy lost</div><div class="v">${fmtArea(st.lostHa)} <small>of ${fmtArea(st.forestHa)}</small></div></div>
-      <div class="stat"><div class="k">Peak year</div><div class="v">${peak && !isBase ? `<span style="color:${onsetColour(peak[0])}">${peak[0]}</span> <small>${fmtArea(peak[1] * haPerPx())}</small>` : "–"}</div></div>
-      <div class="stat"><div class="k">Green again</div><div class="v">${st.lostHa >= 0.5 ? `${Math.round(st.greenShare * 100)}% <small>of lost area</small>` : "–"}</div></div>
-      <div class="stat"><div class="k">Confidence</div><div class="v">${conf.label}${conf.level ? `<span class="meter">${[1, 2, 3].map((k) => `<i class="${k <= conf.level ? "on" : ""}"></i>`).join("")}</span>` : ""}</div></div>
-    </div>
+    <h2 class="answer">${answer}</h2>
+    ${more ? `<p class="more">${more}</p>` : ""}
+    <dl class="ledger">
+      ${row("Canopy lost", `${isBase ? "None yet" : fmtArea(st.lostHa)} <small>of ${fmtArea(st.forestHa)} of forest</small>`)}
+      ${row("Worst year", peak && !isBase ? `<i class="swatch" style="background:${onsetColour(peak[0])}"></i>${peak[0]} <small>${fmtArea(peak[1] * haPerPx())} lost</small>` : "None")}
+      ${row("Green again", st.lostHa >= 0.5 ? `${Math.round(st.greenShare * 100)}% <small>of the lost ground</small>` : "Not applicable")}
+      ${row("Confidence", `${conf.label}${conf.level ? `<span class="meter" aria-hidden="true">${[1, 2, 3].map((k) => `<i class="${k <= conf.level ? "on" : ""}"></i>`).join("")}</span>` : ""}`)}
+    </dl>
     <p class="why">${conf.why}</p>`;
   $("#v-select")?.addEventListener("click", () => { setAreaMode(true); if (innerWidth < 1000) mapEl.scrollIntoView({ behavior: "smooth", block: "center" }); });
   $("#v-clear")?.addEventListener("click", () => { S.area = null; scopeChanged(); });
@@ -690,7 +715,7 @@ function spotModel() {
   return { col, row, pts, summers, base, thr, onset, stateOf };
 }
 function stateColour(st, onset) {
-  return { nf: "#4a5552", base: "#8b9793", ok: HEALTHY, lost: onsetColour(onset), green: onsetColour(onset) + "66" }[st];
+  return { nf: NF, base: BASEC, ok: HEALTHY, lost: onsetColour(onset), green: onsetColour(onset) + "66" }[st];
 }
 
 function renderSpot() {
@@ -702,7 +727,7 @@ function renderSpot() {
   const yr = S.years[S.yearIdx];
 
   let chip;
-  if (M.onset === 0) chip = `<span class="chip"><i style="background:#4a5552"></i>Not forest in baseline</span>`;
+  if (M.onset === 0) chip = `<span class="chip"><i style="background:${NF}"></i>Not forest in baseline</span>`;
   else if (M.onset > 0) {
     const green = cur.v === cur.v && cur.v >= M.base - M.thr && yr >= M.onset;
     chip = `<span class="chip"><i style="background:${onsetColour(M.onset)}"></i>${green ? `Lost ${M.onset}, green again` : `Canopy lost ${M.onset}`}</span>`;
@@ -719,8 +744,8 @@ function renderSpot() {
 
   const clear = M.pts.filter((v) => v === v).length;
   $("#spot").innerHTML = `
-    <div class="head"><div><div class="kicker">Spot history · 200 m square</div>
-      <div class="coords">${lat.toFixed(5)}° N  ${lon.toFixed(5)}° E</div></div>${chip}</div>
+    <div class="head"><div><h2>This 200 m square, every summer</h2>
+      <div class="coords">${lat.toFixed(5)}° N, ${lon.toFixed(5)}° E</div></div>${chip}</div>
     <div class="film" id="film">${S.years.map((y, i) => `<button data-i="${i}" class="${i === S.yearIdx ? "on" : ""}" aria-label="Summer ${y}">
       <canvas width="72" height="72"></canvas><span class="st" style="background:${stateColour(M.stateOf(i), M.onset)}"></span><span class="fy">${String(y).slice(2)}</span></button>`).join("")}</div>
     <div class="chart" id="chart">${chartSvg(M)}</div>
@@ -734,9 +759,9 @@ function renderSpot() {
     const sx = (M.col + 0.5) * c - span / 2, sy = (M.row + 0.5) * c - span / 2;
     g.imageSmoothingEnabled = false;
     g.drawImage(S.rgbImg[i], sx, sy, span, span, 0, 0, 72, 72);
-    g.strokeStyle = "rgba(255,255,255,0.85)";
-    g.lineWidth = 1.5;
-    g.strokeRect(24, 24, 24, 24);
+    g.strokeStyle = "rgba(255,255,255,0.9)";
+    g.lineWidth = 1;
+    g.strokeRect(24.5, 24.5, 23, 23);
     b.addEventListener("click", () => { stopPlay(); setYear(i); });
   });
   const svg = $("#chart svg");
@@ -769,7 +794,7 @@ function chartSvg(M) {
   s += `<rect class="cursor" x="${yA(yr)}" y="${T - 6}" width="${yA(yr + 1) - yA(yr)}" height="${H - T - B + 20}"/>`;
   for (const v of [0, 0.25, 0.5, 0.75, 1]) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L - 6}" y="${Y(v) + 3}" text-anchor="end">${v}</text>`;
   const short = W < 420;
-  for (const y of S.years) s += `<text x="${(yA(y) + yA(y + 1)) / 2}" y="${H - 6}" text-anchor="middle"${y === yr ? ' style="fill:var(--ice)"' : ""}>${short ? "’" + String(y).slice(2) : y}</text>`;
+  for (const y of S.years) s += `<text x="${(yA(y) + yA(y + 1)) / 2}" y="${H - 6}" text-anchor="middle"${y === yr ? ' class="now"' : ""}>${short ? "’" + String(y).slice(2) : y}</text>`;
   if (M.base === M.base) {
     s += `<rect class="band" x="${L}" width="${W - L - R}" y="${Y(M.base)}" height="${Y(M.base - M.thr) - Y(M.base)}"/>`;
     s += `<line class="bandline" x1="${L}" x2="${W - R}" y1="${Y(M.base - M.thr)}" y2="${Y(M.base - M.thr)}"/>`;
@@ -805,11 +830,11 @@ function renderMethod() {
 
 // ------------------------------------------------------------------ boot
 (async function boot() {
+  readTheme();
   try { await load(); }
   catch (err) { $("#verdict").innerHTML = `<p>Could not load the data: ${err.message}. Check that the data folder sits next to this page.</p>`; throw err; }
   $("#title").textContent = "Forest Change Explorer";
-  $("#place").textContent = S.m.place;
-  $("#eyebrow").textContent = `${S.m.simulated ? "Simulated" : "Sentinel-2"} · ${S.m.pixelSizeM} m · ${S.years[0]}–${S.years.at(-1)} · ${S.m.series.dates.length} passes`;
+  $("#place").textContent = `${S.m.place}. ${S.m.simulated ? "Simulated data" : "Sentinel-2"}, every summer from ${S.years[0]} to ${S.years.at(-1)}: ${S.m.series.dates.length} passes at ${S.m.pixelSizeM} m.`;
   $("#sim-badge").hidden = !S.m.simulated;
   renderLegend();
   renderMethod();
