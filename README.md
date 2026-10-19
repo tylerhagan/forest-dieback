@@ -16,6 +16,8 @@ cd web && python3 -m http.server
 
 There is no build step and there are no dependencies. The front end is plain JavaScript, canvas and SVG.
 
+I prototyped it in code with AI coding assistants. The framing, the design decisions and the judgement calls on the data are mine.
+
 ## What you can do
 
 - **Scrub through the years on the loss chart itself.** The timeline is also the answer: each year's bar is the forest that died that year, coloured by year, with a line underneath for how many cloud-free views that summer had. Data quality is visible before you read any result.
