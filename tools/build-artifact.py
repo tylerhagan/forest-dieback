@@ -6,7 +6,7 @@ html = (web / "index.html").read_text()
 body = re.search(r"<!--app-->(.*)<!--/app-->", html, re.S).group(1)
 fonts = re.search(r'<link rel="stylesheet" href="(https://fonts.googleapis.com[^"]+)">', html).group(1)
 out = (
-    '<title>Forest Change Explorer</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n'
+    '<title>Forest change · Stand</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n'
     '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
     f'<link rel="stylesheet" href="{fonts}">\n'
     f"<style>\n{(web / 'src/styles.css').read_text()}\n</style>\n{body}\n"

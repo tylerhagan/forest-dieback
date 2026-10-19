@@ -1,4 +1,4 @@
-<title>Forest Change Explorer</title>
+<title>Forest change · Stand</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -133,7 +133,7 @@ button:focus-visible, [tabindex]:focus-visible, summary:focus-visible { outline:
 h1, h2, h3, p, dl, dd { margin: 0; }
 
 /* labels: condensed, sentence case */
-.label, .legend .lbl, .years-cap, .scale, .cmp, .readout, .film .fy, .chart text, .ledger dt, .spot .coords, .yr .ha, .yr .base, .themes legend {
+.label, .legend .lbl, .years-cap, .scale, .cmp, .readout, .film .fy, .chart text, .ledger dt, .spot .coords, .yr .ha, .yr .base, .statusbar, .crumbs, .area-meta {
   font-variation-settings: "wdth" var(--narrow);
 }
 .label { font-size: 0.8rem; font-weight: 500; color: var(--muted); }
@@ -158,8 +158,6 @@ h1 {
   line-height: 1.02;
 }
 .place { color: var(--ink-2); font-size: 0.92rem; margin-top: 6px; max-width: 60ch; text-wrap: pretty; }
-.tools { display: grid; justify-items: end; gap: 8px; }
-.controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 .seg { display: inline-flex; border: var(--ctl-line) solid var(--ink); border-radius: var(--r-ctl); overflow: hidden; background: var(--sheet); }
 .seg button { border: 0; background: none; padding: 7px 14px; font-size: 0.88rem; font-weight: 500; color: var(--ink-2); }
 .seg button + button { border-left: 1px solid var(--rule); }
@@ -169,13 +167,6 @@ h1 {
 .tool { border: var(--ctl-line) solid var(--rule); background: var(--sheet); padding: 7px 14px; border-radius: var(--r-ctl); font-size: 0.88rem; font-weight: 500; }
 .tool:hover { border-color: var(--ink); }
 .tool[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-
-/* theme switcher: quiet, typographic */
-.themes { border: 0; margin: 0; padding: 0; display: flex; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
-.themes legend { float: left; font-size: 0.8rem; font-weight: 500; color: var(--muted); padding: 0; margin-right: 2px; }
-.themes button { border: 0; background: none; padding: 2px 0; font-size: 0.84rem; font-weight: 500; color: var(--ink-2); text-decoration: none; border-bottom: 2px solid transparent; }
-.themes button:hover { color: var(--ink); border-bottom-color: var(--rule); }
-.themes button[aria-checked="true"] { color: var(--ink); font-weight: 700; border-bottom-color: var(--accent); }
 
 /* ---------------------------------------------------------------- stage */
 .stage { display: grid; gap: 22px; }
@@ -343,7 +334,6 @@ h1 {
 [data-theme="civic"] button:focus-visible,
 [data-theme="civic"] [tabindex]:focus-visible,
 [data-theme="civic"] summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 0; box-shadow: 0 0 0 6px #ffd84a; }
-[data-theme="civic"] .themes button[aria-checked="true"] { border-bottom-width: 3px; }
 [data-theme="civic"] .legend, [data-theme="civic"] .readout { box-shadow: 0 1px 0 var(--rule); }
 [data-theme="civic"] .yr .base { font-style: normal; }
 [data-theme="civic"] .years { border-color: var(--rule); }
@@ -376,11 +366,10 @@ h1 {
 [data-theme="orbital"] .seg button { border-radius: 8px; color: var(--muted); }
 [data-theme="orbital"] .seg button + button { border-left: 0; }
 [data-theme="orbital"] .seg button:hover { background: rgba(255, 255, 255, 0.06); color: var(--ink); }
-[data-theme="orbital"] .seg button[aria-checked="true"] { box-shadow: 0 0 22px -4px rgba(77, 225, 255, 0.7); font-weight: 600; }
+[data-theme="orbital"] .seg button[aria-checked="true"] { color: var(--on-accent); box-shadow: 0 0 22px -4px rgba(77, 225, 255, 0.7); font-weight: 600; }
 [data-theme="orbital"] .tool { background: rgba(255, 255, 255, 0.04); border-color: var(--rule); }
 [data-theme="orbital"] .tool:hover { border-color: rgba(255, 255, 255, 0.3); }
 [data-theme="orbital"] .tool[aria-pressed="true"] { box-shadow: 0 0 22px -4px rgba(77, 225, 255, 0.7); font-weight: 600; }
-[data-theme="orbital"] .themes button[aria-checked="true"] { color: var(--accent); }
 [data-theme="orbital"] .map {
   box-shadow: 0 0 0 1px rgba(77, 225, 255, 0.06), 0 40px 90px -40px rgba(77, 225, 255, 0.35);
 }
@@ -413,23 +402,223 @@ h1 {
 [data-theme="orbital"] .chart .med { stroke-linecap: round; }
 [data-theme="orbital"] .method summary::after { text-decoration: none; }
 
+/* ================================================================ product shell */
+:root, [data-theme="field"] { --bar-bg: var(--sheet); --bar-ink: var(--ink); --bar-line: var(--ink); --bar-muted: var(--muted); --field-bg: var(--paper); }
+[data-theme="civic"] { --bar-bg: #1a4480; --bar-ink: #ffffff; --bar-line: #162e51; --bar-muted: #c5d1e3; --field-bg: #ffffff; }
+[data-theme="orbital"] { --bar-bg: rgba(8, 12, 22, 0.78); --bar-ink: var(--ink); --bar-line: rgba(255, 255, 255, 0.1); --bar-muted: var(--muted); --field-bg: rgba(255, 255, 255, 0.06); }
+
+.app { min-height: 100vh; }
+.only-narrow { display: none !important; }
+svg { flex: none; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: 14px;
+  height: 54px; padding: 0 max(14px, env(safe-area-inset-right, 0px)) 0 max(14px, env(safe-area-inset-left, 0px));
+  background: var(--bar-bg); color: var(--bar-ink);
+  border-bottom: 1px solid var(--bar-line);
+  -webkit-backdrop-filter: var(--chip-blur); backdrop-filter: var(--chip-blur);
+}
+.brandmark { display: inline-flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; }
+.brandmark svg { width: 22px; height: 22px; }
+.brandmark .product { font-weight: 700; font-size: 1.08rem; letter-spacing: -0.02em; font-variation-settings: "wdth" var(--wide); }
+.workspace { font-size: 0.86rem; color: var(--bar-muted); padding-left: 14px; border-left: 1px solid var(--bar-line); white-space: nowrap; }
+.spacer { flex: 1; }
+.icon-btn { position: relative; display: grid; place-items: center; width: 36px; height: 36px; border: 0; background: none; color: inherit; border-radius: var(--r-ctl); }
+.icon-btn:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
+.icon-btn svg { width: 20px; height: 20px; }
+.badge { position: absolute; top: 3px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--loss-1); color: #fff; font-size: 0.66rem; font-weight: 700; line-height: 16px; text-align: center; }
+[data-theme="civic"] .badge { background: #d83933; }
+[data-theme="orbital"] .badge { background: var(--loss-0); box-shadow: 0 0 10px var(--loss-0); }
+
+.search { position: relative; display: flex; align-items: center; gap: 8px; width: min(320px, 28vw); height: 34px; padding: 0 10px; background: var(--field-bg); border: 1px solid var(--bar-line); border-radius: var(--r-ctl); color: var(--bar-muted); }
+[data-theme="civic"] .search { border-color: #ffffff; }
+.search svg { width: 16px; height: 16px; }
+.search input { flex: 1; min-width: 0; border: 0; background: none; color: var(--ink); font: inherit; font-size: 0.88rem; outline: none; }
+[data-theme="civic"] .search input { color: #1b1b1b; }
+.search:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+[data-theme="civic"] .search:focus-within { outline-color: #ffd84a; }
+
+.pop-anchor { position: relative; }
+.popover {
+  position: absolute; z-index: 40; top: calc(100% + 8px); right: 0; width: min(360px, calc(100vw - 24px));
+  background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: calc(var(--r-chip) * 1.5);
+  box-shadow: 0 18px 48px -16px rgba(0, 0, 0, 0.35); padding: 8px;
+}
+[data-theme="orbital"] .popover { background: #0d1424; }
+.search-results { left: 0; right: auto; width: 100%; }
+.search-results button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: var(--r-chip); font-size: 0.9rem; }
+.search-results button:hover, .search-results button:focus-visible { background: var(--paper); }
+.popover .empty { padding: 8px 10px; font-size: 0.86rem; color: var(--muted); }
+.notes h2 { font-size: 0.95rem; font-weight: 700; padding: 6px 8px 8px; }
+.note { display: flex; gap: 10px; width: 100%; text-align: left; border: 0; background: none; padding: 9px 8px; border-radius: var(--r-chip); border-top: 1px solid var(--rule-soft); }
+.note:not([disabled]):hover { background: var(--paper); }
+.note[disabled] { cursor: default; }
+.note i { flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--muted); }
+.note.hit i { background: var(--loss-1); }
+.note.quiet i { background: var(--spruce); }
+.note b { display: block; font-size: 0.88rem; font-weight: 600; }
+.note small { display: block; font-size: 0.8rem; color: var(--muted); line-height: 1.45; margin-top: 2px; }
+
+.profile { display: flex; align-items: center; gap: 10px; }
+.profile .who { display: grid; text-align: right; line-height: 1.2; }
+.profile .who b { font-size: 0.84rem; font-weight: 600; }
+.profile .who small { font-size: 0.74rem; color: var(--bar-muted); }
+.avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 0.74rem; font-weight: 700; letter-spacing: 0.02em; }
+[data-theme="civic"] .avatar { background: #ffffff; color: #1a4480; }
+[data-theme="field"] .avatar, :root:not([data-theme]) .avatar { background: var(--spruce); color: var(--sheet); }
+
+/* navigation rail */
+.nav { display: none; }
+.nav-item { position: relative; display: grid; justify-items: center; gap: 4px; width: 100%; padding: 10px 4px; border: 0; background: none; color: var(--muted); font-size: 0.7rem; font-weight: 600; border-radius: var(--r-ctl); }
+.nav-item svg { width: 22px; height: 22px; }
+.nav-item:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.nav-item[aria-current="page"] { color: var(--ink); }
+.nav-item[aria-current="page"]::before { content: ""; position: absolute; left: -8px; top: 10px; bottom: 10px; width: 3px; background: var(--accent); border-radius: 2px; }
+[data-theme="orbital"] .nav-item[aria-current="page"] svg { color: var(--accent); filter: drop-shadow(0 0 6px rgba(77, 225, 255, 0.6)); }
+.count { position: absolute; top: 6px; right: 12px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-size: 0.62rem; line-height: 15px; text-align: center; }
+
+/* drawer */
+.drawer {
+  position: fixed; z-index: 35; top: 0; bottom: 0; left: 0; width: min(360px, 88vw);
+  display: flex; flex-direction: column;
+  background: var(--sheet); color: var(--ink); border-right: 1px solid var(--rule);
+  box-shadow: 24px 0 60px -30px rgba(0, 0, 0, 0.45);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+[data-theme="orbital"] .drawer { background: #0b111e; }
+.drawer-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 12px 8px 18px; border-bottom: 1px solid var(--rule-soft); }
+.drawer-head h2 { font-size: 1.05rem; font-weight: 700; }
+.drawer-body { flex: 1; overflow-y: auto; padding: 14px 18px 24px; display: grid; gap: 12px; align-content: start; }
+.drawer-sub { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+.drawer-nav { padding: 8px 10px; border-bottom: 1px solid var(--rule-soft); display: grid; gap: 2px; }
+.drawer-nav button { position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 10px; border: 0; background: none; border-radius: var(--r-ctl); font-size: 0.95rem; font-weight: 500; text-align: left; }
+.drawer-nav button svg { width: 20px; height: 20px; color: var(--muted); }
+.drawer-nav button[aria-current="page"] { background: var(--paper); font-weight: 700; }
+.drawer-nav .count { position: static; margin-left: auto; }
+.drawer-ws { padding: 10px 10px 4px; font-size: 0.8rem; color: var(--muted); }
+.scrim { position: fixed; inset: 0; z-index: 34; background: rgba(10, 14, 12, 0.32); }
+.filter { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; border: 1px solid var(--rule); border-radius: var(--r-ctl); background: var(--paper); color: var(--muted); }
+.filter svg { width: 16px; height: 16px; }
+.filter input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; font-size: 0.9rem; color: var(--ink); outline: none; }
+.area-list { display: grid; gap: 6px; }
+.area-row { display: grid; gap: 4px; text-align: left; padding: 10px 12px; border: 1px solid var(--rule-soft); border-radius: var(--r-ctl); background: none; }
+.area-row:hover { border-color: var(--rule); background: var(--paper); }
+.area-row.on { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.area-name { font-weight: 600; font-size: 0.94rem; }
+.area-meta { font-size: 0.8rem; color: var(--muted); }
+.area-bar { height: 4px; background: var(--rule-soft); border-radius: 2px; overflow: hidden; }
+.area-bar i { display: block; height: 100%; background: var(--loss-1); }
+.drawer-note, .drawer-empty { font-size: 0.86rem; color: var(--ink-2); line-height: 1.5; }
+.tool.wide { width: 100%; justify-content: center; }
+.alert-list { display: grid; gap: 6px; }
+.alert-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--rule-soft); border-radius: var(--r-ctl); }
+.alert-row > div { flex: 1; display: grid; gap: 2px; }
+.alert-row b { font-size: 0.92rem; }
+.alert-row small { font-size: 0.8rem; color: var(--muted); }
+.alert-row.hit { border-color: var(--loss-1); }
+.alert-row.hit small { color: var(--ink-2); }
+
+/* page header */
+.crumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; }
+.crumbs svg { width: 12px; height: 12px; }
+.crumb { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+[data-theme="field"] .crumb, :root:not([data-theme]) .crumb { color: var(--ink-2); }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.tool { display: inline-flex; align-items: center; gap: 7px; }
+.tool svg { width: 16px; height: 16px; }
+.tool.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.tool.primary:hover { filter: brightness(1.1); }
+[data-theme="civic"] .tool.primary { color: var(--on-accent); }
+[data-theme="orbital"] .tool.primary { box-shadow: 0 0 22px -6px rgba(77, 225, 255, 0.8); }
+.maptools { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.maptools-right { display: flex; gap: 6px; }
+
+/* status bar */
+.statusbar { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: center; padding: 8px 0 2px; border-top: 1px solid var(--rule-soft); font-size: 0.76rem; color: var(--muted); }
+.statusbar .ok { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); font-weight: 600; }
+.statusbar .ok i { width: 7px; height: 7px; border-radius: 50%; background: var(--spruce); }
+[data-theme="orbital"] .statusbar .ok i { box-shadow: 0 0 8px var(--spruce); }
+
+/* dialog */
+.sheet {
+  width: min(440px, calc(100vw - 32px)); padding: 22px; border: 1px solid var(--rule);
+  border-radius: calc(var(--r-chip) * 2); background: var(--sheet); color: var(--ink);
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.5);
+}
+[data-theme="orbital"] .sheet { background: #0d1424; }
+.sheet::backdrop { background: rgba(10, 14, 12, 0.4); }
+.sheet h2 { font-size: 1.2rem; font-weight: 700; }
+.sheet-lead { margin-top: 8px; font-size: 0.92rem; color: var(--ink-2); line-height: 1.5; }
+.field-row { display: grid; gap: 6px; margin-top: 16px; font-size: 0.9rem; font-weight: 600; }
+.field-row select { font: inherit; font-weight: 500; padding: 9px 10px; border: var(--ctl-line) solid var(--rule); border-radius: var(--r-ctl); background: var(--paper); color: var(--ink); }
+.sheet-fine { margin-top: 12px; font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+.sheet-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+/* toast */
+.toast {
+  position: fixed; z-index: 60; left: 50%; bottom: 84px; transform: translateX(-50%);
+  max-width: calc(100vw - 32px); padding: 10px 14px; border-radius: var(--r-ctl);
+  background: var(--ink); color: var(--sheet); font-size: 0.88rem; font-weight: 500;
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.4);
+}
+
+/* ================================================================ demo control: deliberately outside the product's look */
+.demo {
+  position: fixed; z-index: 50; left: 50%; bottom: max(14px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px;
+  background: #121212; color: #f2f2f2; border: 1px dashed rgba(255, 255, 255, 0.35); border-radius: 999px;
+  font: 500 0.8rem/1.2 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-shadow: 0 14px 40px -12px rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
+}
+.demo-label { color: #b9b9b9; }
+.demo-picks { display: flex; gap: 2px; }
+.demo-picks button { display: inline-flex; align-items: center; gap: 7px; border: 0; padding: 6px 11px 6px 7px; border-radius: 999px; background: none; color: #d6d6d6; font: inherit; }
+.demo-picks button:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+.demo-picks button[aria-checked="true"] { background: #f2f2f2; color: #121212; font-weight: 700; }
+.demo-picks button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: none; }
+.sw { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.4); }
+.sw-field { background: linear-gradient(135deg, #e6eae3 50%, #8c2618 50%); }
+.sw-civic { background: linear-gradient(135deg, #ffffff 50%, #1a4480 50%); }
+.sw-orbital { background: linear-gradient(135deg, #05070d 50%, #ff4a3d 50%); }
+
 /* ================================================================ layout */
+.shell { padding-bottom: 88px; }
+.bar { align-items: flex-end; }
+
 @media (min-width: 1000px) {
-  .shell { height: 100vh; grid-template-rows: auto minmax(0, 1fr); padding-block: 20px; }
+  .app { display: grid; grid-template-columns: 80px minmax(0, 1fr); grid-template-rows: 54px minmax(0, 1fr); height: 100vh; }
+  .topbar { grid-column: 1 / -1; }
+  .nav { display: grid; align-content: start; gap: 4px; padding: 12px 8px; border-right: 1px solid var(--rule-soft); background: color-mix(in srgb, var(--sheet) 55%, transparent); }
+  .drawer { top: 54px; left: 80px; border-left: 1px solid var(--rule-soft); }
+  .scrim { top: 54px; left: 80px; background: rgba(10, 14, 12, 0.12); }
+  .shell { height: calc(100vh - 54px); grid-template-rows: auto minmax(0, 1fr) auto; padding-block: 16px 12px; gap: 14px; max-width: none; margin: 0; }
   .stage { grid-template-columns: minmax(0, 1fr) 400px; gap: 28px; min-height: 0; }
-  .mapzone { grid-template-rows: minmax(0, 1fr) auto auto; min-height: 0; }
+  .mapzone { grid-template-rows: auto minmax(0, 1fr) auto auto; min-height: 0; }
   .map { height: auto; min-height: 0; }
-  .rail { overflow-y: auto; min-height: 0; padding-right: 6px; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+  .rail { overflow-y: auto; min-height: 0; padding-right: 6px; padding-bottom: 60px; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
   .panel:first-child { padding-top: 14px; }
+  .demo { left: auto; right: 22px; transform: none; bottom: 18px; }
+  .toast { bottom: 76px; }
 }
 @media (min-width: 1400px) { .stage { grid-template-columns: minmax(0, 1fr) 440px; } }
-
+@media (max-width: 999px) {
+  .only-wide { display: none !important; }
+  .only-narrow { display: grid !important; }
+  .drawer-nav.only-narrow { display: grid !important; }
+  .profile .who { display: none; }
+  .topbar { gap: 6px; }
+  .brandmark { margin-left: 2px; }
+}
 @media (max-width: 520px) {
-  .tools { width: 100%; justify-items: stretch; }
-  .controls { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
-  .seg { grid-column: 1 / -1; }
-  .seg button { flex: 1; padding-inline: 4px; }
-  .themes { order: -1; }
+  .actions { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .actions .tool { justify-content: center; padding: 8px 4px; font-size: 0.82rem; }
+  .maptools { display: grid; grid-template-columns: 1fr 1fr; }
+  .maptools .seg { grid-column: 1 / -1; }
+  .maptools .seg button { flex: 1; padding-inline: 4px; }
+  .maptools-right { display: contents; }
+  .maptools-right .tool { justify-content: center; }
   .yr { grid-template-rows: 46px auto 3px; }
   .yr .y { font-size: 0.72rem; }
   .yr .ha { display: none; }
@@ -438,8 +627,26 @@ h1 {
   .legend .ramp { margin: 5px 0 2px; }
   .years-cap { padding-left: 0; }
   .ledger > div { grid-template-columns: 6.5rem minmax(0, 1fr); }
+  .demo { gap: 6px; padding-left: 12px; font-size: 0.76rem; }
+  .demo-picks button { padding: 6px 9px 6px 6px; gap: 5px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ================================================================ printed report */
+.print-head { display: none; }
+@media print {
+  @page { margin: 14mm; }
+  .topbar, .nav, .drawer, .scrim, .demo, .toast, .maptools, .actions, .crumbs, .play, .years-cap, .hint, .fit, .readout, .statusbar { display: none !important; }
+  .print-head { display: block; margin-bottom: 8mm; }
+  .print-head p { font-size: 10pt; color: #444; }
+  .print-head h1 { font-size: 18pt; margin: 2mm 0; }
+  .bar { display: none; }
+  .app, .shell, .stage, .mapzone, .rail { display: block !important; height: auto !important; overflow: visible !important; padding: 0 !important; }
+  .map { height: 110mm !important; margin-bottom: 4mm; break-inside: avoid; }
+  .timeline { margin-bottom: 6mm; }
+  .panel { break-inside: avoid; border-radius: 0 !important; box-shadow: none !important; }
+  body { background: #fff !important; }
+}
 
 </style>
 
@@ -452,64 +659,173 @@ h1 {
     document.documentElement.dataset.theme = ok.indexOf(t) < 0 ? "field" : t;
   })();
 </script>
-<div class="shell">
-  <header class="bar">
-    <div class="brand">
-      <h1 id="title">Forest Change Explorer</h1>
-      <p class="place" id="place"></p>
+
+<!-- icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-monitor" viewBox="0 0 20 20"><path d="M3 15l4-5 3 3 3-5 4 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M3 3v14h14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-areas" viewBox="0 0 20 20"><path d="M3 5.5l4.5-2 5 2 4.5-2v11l-4.5 2-5-2-4.5 2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7.5 3.5v11M12.5 5.5v11" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 20 20"><path d="M5 13.5V9a5 5 0 0110 0v4.5l1.5 1.5h-13zM8 16.5a2 2 0 004 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-report" viewBox="0 0 20 20"><path d="M5 2.5h7l3 3v12H5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7.5 10h5M7.5 13h5M7.5 7h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-search" viewBox="0 0 20 20"><circle cx="9" cy="9" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M13 13l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-share" viewBox="0 0 20 20"><path d="M10 3v10M6.5 6.5L10 3l3.5 3.5M4.5 11v5.5h11V11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-download" viewBox="0 0 20 20"><path d="M10 3v10M6.5 9.5L10 13l3.5-3.5M4.5 16.5h11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 20 20"><path d="M5 13.5V9a5 5 0 0110 0v4.5l1.5 1.5h-13z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 6.5v4M10 12.6v.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 20 20"><path d="M3.5 6h13M3.5 10h13M3.5 14h13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 20 20"><path d="M8 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-mark" viewBox="0 0 24 24"><path d="M12 2.5l7.5 13H4.5z" fill="currentColor"/><path d="M12 9l5.2 9H6.8z" fill="currentColor" opacity=".55"/><rect x="11" y="18" width="2" height="3.5" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <!-- ======================================================== product top bar -->
+  <header class="topbar">
+    <button class="icon-btn only-narrow" id="btn-menu" aria-label="Open menu" aria-expanded="false" aria-controls="drawer">
+      <svg><use href="#i-menu"/></svg>
+    </button>
+    <a class="brandmark" href="./" aria-label="Stand, home">
+      <svg aria-hidden="true"><use href="#i-mark"/></svg><span class="product">Stand</span>
+    </a>
+    <span class="workspace only-wide" id="workspace"></span>
+    <label class="search only-wide">
+      <svg aria-hidden="true"><use href="#i-search"/></svg>
+      <input id="search" type="search" placeholder="Find a saved area" autocomplete="off" aria-label="Find a saved area" aria-controls="search-results" aria-expanded="false">
+      <div class="popover search-results" id="search-results" role="listbox" hidden></div>
+    </label>
+    <span class="spacer"></span>
+    <div class="pop-anchor">
+      <button class="icon-btn" id="btn-notes" aria-label="Notifications" aria-expanded="false" aria-controls="notes">
+        <svg><use href="#i-bell"/></svg><span class="badge" id="notes-badge" hidden></span>
+      </button>
+      <div class="popover notes" id="notes" hidden></div>
     </div>
-    <div class="tools">
-    <fieldset class="themes" role="radiogroup" aria-label="Style">
-      <legend>Style</legend>
-      <button role="radio" data-theme-pick="field" aria-checked="false">Field sheet</button>
-      <button role="radio" data-theme-pick="civic" aria-checked="false">Civic</button>
-      <button role="radio" data-theme-pick="orbital" aria-checked="false">Orbital</button>
-    </fieldset>
-    <div class="controls">
-      <div class="seg" role="radiogroup" aria-label="Map layer">
-        <button role="radio" data-layer="rgb" aria-checked="false">Imagery</button>
-        <button role="radio" data-layer="ndvi" aria-checked="false">Vegetation</button>
-        <button role="radio" data-layer="change" aria-checked="true">Loss</button>
-      </div>
-      <button class="tool" id="btn-compare" aria-pressed="false">Compare</button>
-      <button class="tool" id="btn-area" aria-pressed="false">Select an area</button>
-    </div>
-    </div>
+    <div class="profile" id="profile" aria-label="Signed in user"></div>
   </header>
 
-  <main class="stage">
-    <section class="mapzone" aria-label="Map and timeline">
-      <div class="map" id="map">
-        <canvas id="canvas" aria-label="Map. Drag to pan, pinch or scroll to zoom, tap to inspect a spot."></canvas>
-        <div class="readout" id="readout" hidden></div>
-        <div class="hint" id="hint">Tap anywhere to see that spot's history</div>
-        <div class="cmp left" id="cmp-left" hidden></div>
-        <div class="cmp right" id="cmp-right" hidden></div>
-        <div class="legend" id="legend"></div>
-        <div class="scale" id="scale"><span class="scale-bar"></span><span class="scale-text"></span></div>
-        <button class="fit" id="btn-fit">Fit</button>
-        <span class="sim" id="sim-badge" hidden>Simulated data</span>
-      </div>
+  <!-- ======================================================== navigation rail -->
+  <nav class="nav" id="nav" aria-label="Main">
+    <button class="nav-item" data-nav="monitor" aria-current="page"><svg aria-hidden="true"><use href="#i-monitor"/></svg><span>Monitor</span></button>
+    <button class="nav-item" data-nav="areas"><svg aria-hidden="true"><use href="#i-areas"/></svg><span>Areas</span></button>
+    <button class="nav-item" data-nav="alerts"><svg aria-hidden="true"><use href="#i-alert"/></svg><span>Alerts</span><span class="count" id="nav-alerts-count" hidden></span></button>
+    <button class="nav-item" data-nav="reports"><svg aria-hidden="true"><use href="#i-report"/></svg><span>Reports</span></button>
+  </nav>
 
-      <div class="timeline">
-        <button class="play" id="btn-play" aria-label="Play through the years">
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path id="play-icon" d="M4 2.5v11l9-5.5z"/></svg>
-        </button>
-        <div class="years" id="years" role="slider" tabindex="0" aria-label="Year"></div>
-      </div>
-      <p class="years-cap"><span id="cap-left">Forest lost each year</span><span>Line under each year: how many cloud-free views that summer</span></p>
-    </section>
+  <!-- ======================================================== drawer: areas, alerts, and the menu on phones -->
+  <aside class="drawer" id="drawer" aria-label="Panel" hidden>
+    <div class="drawer-head">
+      <h2 id="drawer-title">Areas</h2>
+      <button class="icon-btn" id="btn-drawer-close" aria-label="Close panel"><svg><use href="#i-close"/></svg></button>
+    </div>
+    <div class="drawer-nav only-narrow" id="drawer-nav"></div>
+    <div class="drawer-body" id="drawer-body"></div>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
 
-    <aside class="rail">
-      <section class="panel verdict" id="verdict" aria-live="polite"></section>
-      <section class="panel spot" id="spot"></section>
-      <details class="panel method">
-        <summary>How this works</summary>
-        <div id="method"></div>
-      </details>
-    </aside>
-  </main>
+  <!-- ======================================================== page -->
+  <div class="shell">
+    <header class="bar">
+      <div class="brand">
+        <nav class="crumbs" aria-label="Breadcrumb">
+          <button class="crumb" data-nav="areas">Areas</button><svg aria-hidden="true"><use href="#i-chevron"/></svg>
+          <span id="crumb-area">Upper Harz</span><svg aria-hidden="true"><use href="#i-chevron"/></svg>
+          <span aria-current="page">Forest change</span>
+        </nav>
+        <h1 id="title">Forest change</h1>
+        <p class="place" id="place"></p>
+      </div>
+      <div class="actions">
+        <button class="tool" id="btn-share"><svg aria-hidden="true"><use href="#i-share"/></svg><span>Share</span></button>
+        <button class="tool" id="btn-export"><svg aria-hidden="true"><use href="#i-download"/></svg><span>Export report</span></button>
+        <button class="tool primary" id="btn-alert"><svg aria-hidden="true"><use href="#i-alert"/></svg><span>Set alert</span></button>
+      </div>
+    </header>
+
+    <main class="stage">
+      <section class="mapzone" aria-label="Map and timeline">
+        <div class="maptools">
+          <div class="seg" role="radiogroup" aria-label="Map layer">
+            <button role="radio" data-layer="rgb" aria-checked="false">Imagery</button>
+            <button role="radio" data-layer="ndvi" aria-checked="false">Vegetation</button>
+            <button role="radio" data-layer="change" aria-checked="true">Loss</button>
+          </div>
+          <div class="maptools-right">
+            <button class="tool" id="btn-compare" aria-pressed="false">Compare</button>
+            <button class="tool" id="btn-area" aria-pressed="false">Select an area</button>
+          </div>
+        </div>
+        <div class="map" id="map">
+          <canvas id="canvas" aria-label="Map. Drag to pan, pinch or scroll to zoom, tap to inspect a spot."></canvas>
+          <div class="readout" id="readout" hidden></div>
+          <div class="hint" id="hint">Tap anywhere to see that spot's history</div>
+          <div class="cmp left" id="cmp-left" hidden></div>
+          <div class="cmp right" id="cmp-right" hidden></div>
+          <div class="legend" id="legend"></div>
+          <div class="scale" id="scale"><span class="scale-bar"></span><span class="scale-text"></span></div>
+          <button class="fit" id="btn-fit">Fit</button>
+          <span class="sim" id="sim-badge" hidden>Simulated data</span>
+        </div>
+
+        <div class="timeline">
+          <button class="play" id="btn-play" aria-label="Play through the years">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path id="play-icon" d="M4 2.5v11l9-5.5z"/></svg>
+          </button>
+          <div class="years" id="years" role="slider" tabindex="0" aria-label="Year"></div>
+        </div>
+        <p class="years-cap"><span id="cap-left">Forest lost each year</span><span>Line under each year: how many cloud-free views that summer</span></p>
+      </section>
+
+      <aside class="rail">
+        <section class="panel verdict" id="verdict" aria-live="polite"></section>
+        <section class="panel spot" id="spot"></section>
+        <details class="panel method">
+          <summary>How this works</summary>
+          <div id="method"></div>
+        </details>
+      </aside>
+    </main>
+
+    <footer class="statusbar" id="statusbar" aria-label="Data status"></footer>
+  </div>
 </div>
+
+<!-- ======================================================== set alert dialog -->
+<dialog class="sheet" id="alert-dialog" aria-labelledby="alert-title">
+  <form method="dialog" id="alert-form">
+    <h2 id="alert-title">Set an alert</h2>
+    <p class="sheet-lead" id="alert-lead"></p>
+    <label class="field-row">
+      <span>Notify me when new canopy loss passes</span>
+      <select id="alert-threshold">
+        <option value="1">1 ha</option>
+        <option value="5" selected>5 ha</option>
+        <option value="10">10 ha</option>
+        <option value="25">25 ha</option>
+      </select>
+    </label>
+    <p class="sheet-fine">Checked after every cloud-free pass. Loss is only confirmed once it persists into a second summer, so alerts for this year arrive marked provisional.</p>
+    <div class="sheet-actions">
+      <button class="tool" value="cancel" formnovalidate>Cancel</button>
+      <button class="tool primary" value="save" id="alert-save">Save alert</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ======================================================== report header, only in print -->
+<div class="print-head" id="print-head" aria-hidden="true"></div>
+
+<!-- ======================================================== toast -->
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<!-- ======================================================== demo control: not part of the product -->
+<aside class="demo" aria-label="Portfolio demo">
+  <span class="demo-label">Demo<span class="only-wide">: same product, three customers</span></span>
+  <div class="demo-picks" role="radiogroup" aria-label="Show the product as used by">
+    <button role="radio" data-theme-pick="field" aria-checked="false"><i class="sw sw-field"></i>Forester</button>
+    <button role="radio" data-theme-pick="civic" aria-checked="false"><i class="sw sw-civic"></i>Analyst</button>
+    <button role="radio" data-theme-pick="orbital" aria-checked="false"><i class="sw sw-orbital"></i>Buyer</button>
+  </div>
+</aside>
 
 <script type="module">
 // Forest Change Explorer
@@ -1172,7 +1488,7 @@ function setYear(i) {
   renderReadout();
   requestDraw();
 }
-function scopeChanged() { scopeCache = scopeStats(); renderYears(); renderVerdict(); requestDraw(); }
+function scopeChanged() { scopeCache = scopeStats(); renderYears(); renderVerdict(); requestDraw(); window.__onScope?.(); }
 
 function stopPlay() {
   clearInterval(S.playing);
@@ -1369,6 +1685,7 @@ function setTheme(t) {
   try { const u = new URL(location.href); u.searchParams.set("theme", t); history.replaceState(null, "", u); } catch (e) {}
   markTheme();
   readTheme();
+  window.__onTheme?.();
   if (!S.m) return;
   S.ndviCanvas = S.ndvi.map(paintNdvi);
   S.fade = null; S.lastSrc = null;
@@ -1388,7 +1705,6 @@ document.fonts?.ready.then(() => requestDraw());
   readTheme();
   try { await load(); }
   catch (err) { $("#verdict").innerHTML = `<p>Could not load the data: ${err.message}. Check that the data folder sits next to this page.</p>`; throw err; }
-  $("#title").textContent = "Forest Change Explorer";
   $("#place").textContent = `${S.m.place}. ${S.m.simulated ? "Simulated data" : "Sentinel-2"}, every summer from ${S.years[0]} to ${S.years.at(-1)}: ${S.m.series.dates.length} passes at ${S.m.pixelSizeM} m.`;
   $("#sim-badge").hidden = !S.m.simulated;
   renderLegend();
@@ -1412,6 +1728,323 @@ document.fonts?.ready.then(() => requestDraw());
   S.ready = false;
   setYear(S.years.length - 1);
   S.ready = true;
+  window.__onReady?.();
 })();
+
+// ================================================================== product shell
+// The explorer sits inside "Stand", an invented monitoring product, so a reviewer sees where the
+// feature lives: saved areas, alerts, reports, data status. Everything here works on the real data.
+const PRODUCT = "Stand";
+const PERSONAS = {
+  field: { name: "Jonas Weber", role: "District forester", initials: "JW", workspace: "Harz forest district" },
+  civic: { name: "Lena Hoffmann", role: "State forest analyst", initials: "LH", workspace: "State forestry office" },
+  orbital: { name: "Sam Okafor", role: "Carbon portfolio lead", initials: "SO", workspace: "Northern Europe portfolio" },
+};
+// Saved areas, defined in the real world; their pixel boxes are worked out from the dataset bounds.
+const AREAS = [
+  { id: "brocken", name: "Brocken summit", lat: 51.7991, lon: 10.6156, km: 2.4 },
+  { id: "achtermann", name: "Achtermannshöhe", lat: 51.7697, lon: 10.5609, km: 2.2 },
+  { id: "torfhaus", name: "Torfhaus moor edge", lat: 51.8030, lon: 10.5420, km: 2.0 },
+  { id: "schierke", name: "Schierke slopes", lat: 51.7680, lon: 10.6560, km: 2.4 },
+];
+const rectCache = new Map();
+function areaRect(id) {
+  if (!id) return null;
+  if (rectCache.has(id)) return rectCache.get(id);
+  const a = AREAS.find((x) => x.id === id);
+  if (!a || !S.m) return null;
+  const [w, s, e, n] = S.m.bbox;
+  const cx = ((a.lon - w) / (e - w)) * S.m.width, cy = ((n - a.lat) / (n - s)) * S.m.height;
+  const half = (a.km * 1000) / 2 / S.m.pixelSizeM;
+  const r = normArea({ x0: cx - half, y0: cy - half, x1: cx + half, y1: cy + half });
+  rectCache.set(id, r);
+  return r;
+}
+const areaName = () => (S.areaId ? AREAS.find((a) => a.id === S.areaId).name : S.area ? "Custom area" : "Upper Harz");
+function statsFor(id) {
+  const keep = S.area;
+  S.area = id ? areaRect(id) : null;
+  const st = scopeStats();
+  S.area = keep;
+  return st;
+}
+const persona = () => PERSONAS[document.documentElement.dataset.theme] || PERSONAS.field;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+let alerts = store.get("stand-alerts", []);
+let notesSeen = 0;
+
+// ---------------------------------------------------------------- toast
+let toastTimer = 0;
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+}
+
+// ---------------------------------------------------------------- top bar, status bar
+function renderShell() {
+  const p = persona();
+  $("#workspace").textContent = p.workspace;
+  $("#profile").innerHTML = `<span class="who"><b>${p.name}</b><small>${p.role}</small></span><span class="avatar" aria-hidden="true">${p.initials}</span>`;
+  $("#profile").setAttribute("aria-label", `Signed in as ${p.name}, ${p.role}`);
+  if (S.m) { renderStatus(); renderNotes(); }
+}
+const fmtDate = (d) => new Date(d + "T12:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+function renderStatus() {
+  const m = S.m, last = m.composites.at(-1);
+  $("#statusbar").innerHTML = `
+    <span class="ok"><i></i>Up to date</span>
+    <span>Latest pass ${fmtDate(m.series.dates.at(-1))}</span>
+    <span>Sentinel-2 L2A, ${m.pixelSizeM} m</span>
+    <span>${m.series.dates.length} passes since ${m.years[0]}</span>
+    <span>Summer ${last.year}: ${last.clearObs} cloud-free views</span>`;
+}
+
+// ---------------------------------------------------------------- notifications, worked out from the data
+function notes() {
+  const m = S.m, last = m.composites.at(-1), y = last.year;
+  const thin = m.composites.filter((c) => !m.baselineYears.includes(c.year)).sort((a, b) => a.clearObs - b.clearObs)[0];
+  const list = [];
+  for (const al of alerts) {
+    const st = statsFor(al.areaId);
+    const fresh = (st.byYear.get(y) || 0) * haPerPx();
+    const name = al.areaId ? AREAS.find((a) => a.id === al.areaId)?.name : "Upper Harz";
+    list.push(fresh >= al.threshold
+      ? { kind: "hit", title: `Alert: ${name}`, body: `${fmtArea(fresh)} of new canopy loss first seen in ${y}, over your ${al.threshold} ha threshold. Provisional until next summer.`, area: al.areaId }
+      : { kind: "quiet", title: `Alert active: ${name}`, body: `${fmtArea(fresh)} of new loss in ${y}, under your ${al.threshold} ha threshold.`, area: al.areaId });
+  }
+  list.push({ kind: "data", title: `Summer ${y} processed`, body: `${last.clearObs} cloud-free views. Loss first seen this summer stays provisional until ${y + 1}.` });
+  list.push({ kind: "data", title: `Thin coverage in ${thin.year}`, body: `Only ${thin.clearObs} cloud-free views that summer, so loss dated around it may be a year late.` });
+  return list;
+}
+function renderNotes() {
+  const list = notes();
+  const unread = Math.max(0, list.length - notesSeen);
+  const b = $("#notes-badge");
+  b.hidden = !unread; b.textContent = unread;
+  $("#btn-notes").setAttribute("aria-label", unread ? `Notifications, ${unread} new` : "Notifications");
+  $("#notes").innerHTML = `<h2>Notifications</h2>` + list.map((n, i) => `
+    <button class="note ${n.kind}" data-i="${i}" ${n.area !== undefined ? "" : "disabled"}>
+      <i aria-hidden="true"></i><span><b>${n.title}</b><small>${n.body}</small></span></button>`).join("");
+  $("#notes").querySelectorAll(".note:not([disabled])").forEach((el) => el.addEventListener("click", () => {
+    openArea(list[+el.dataset.i].area); closePops();
+  }));
+}
+
+// ---------------------------------------------------------------- popovers
+function closePops(except) {
+  for (const [btn, pop] of [["#btn-notes", "#notes"]]) {
+    if (pop === except) continue;
+    $(pop).hidden = true; $(btn).setAttribute("aria-expanded", "false");
+  }
+  if (except !== "#search-results") { $("#search-results").hidden = true; $("#search").setAttribute("aria-expanded", "false"); }
+}
+$("#btn-notes").addEventListener("click", (e) => {
+  e.stopPropagation();
+  const open = $("#notes").hidden;
+  closePops("#notes");
+  $("#notes").hidden = !open;
+  $("#btn-notes").setAttribute("aria-expanded", String(open));
+  if (open) { notesSeen = notes().length; renderNotes(); }
+});
+document.addEventListener("click", (e) => { if (!e.target.closest(".pop-anchor, .search")) closePops(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closePops(); closeDrawer(); } });
+
+// ---------------------------------------------------------------- search over saved areas
+const matchAreas = (q) => [{ id: null, name: "Upper Harz, whole study area" }, ...AREAS].filter((a) => a.name.toLowerCase().includes(q.trim().toLowerCase()));
+$("#search").addEventListener("input", () => {
+  const q = $("#search").value, box = $("#search-results");
+  if (!q.trim()) { box.hidden = true; return; }
+  const hits = matchAreas(q);
+  box.innerHTML = hits.length
+    ? hits.map((a) => `<button role="option" data-id="${a.id ?? ""}">${a.name}</button>`).join("")
+    : `<p class="empty">No saved area matches “${q.replace(/</g, "&lt;")}”. Draw one with Select an area.</p>`;
+  box.hidden = false;
+  $("#search").setAttribute("aria-expanded", "true");
+  box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    openArea(b.dataset.id || null); $("#search").value = ""; closePops();
+  }));
+});
+$("#search").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#search-results button")?.click(); });
+
+// ---------------------------------------------------------------- areas
+function zoomToRect(a) {
+  const r = mapEl.getBoundingClientRect();
+  if (!a) { fit(); return; }
+  const s = Math.max(S.fitScale, Math.min(S.fitScale * 14, Math.min(r.width / ((a.x1 - a.x0) * 1.6), r.height / ((a.y1 - a.y0) * 1.6))));
+  S.view = { s, x: r.width / 2 - ((a.x0 + a.x1) / 2) * s, y: r.height / 2 - ((a.y0 + a.y1) / 2) * s };
+  clampView();
+}
+function openArea(id) {
+  S.areaId = id || null;
+  S.area = areaRect(S.areaId);
+  zoomToRect(S.area);
+  if (S.area) {
+    // move the spot history into the area: its centre 200 m square
+    const c = S.m.series.cellSizePx;
+    S.point = { col: Math.min(S.m.series.cols - 1, Math.floor((S.area.x0 + S.area.x1) / 2 / c)), row: Math.min(S.m.series.rows - 1, Math.floor((S.area.y0 + S.area.y1) / 2 / c)) };
+    renderSpot();
+  }
+  scopeChanged();
+  closeDrawer();
+  if (innerWidth < 1000) $(".bar").scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "start" });
+}
+function onScope() {
+  if (S.areaId && S.area !== areaRect(S.areaId)) S.areaId = null; // drawn by hand
+  $("#crumb-area").textContent = areaName();
+  try {
+    const u = new URL(location.href);
+    if (S.areaId) u.searchParams.set("area", S.areaId); else u.searchParams.delete("area");
+    history.replaceState(null, "", u);
+  } catch (e) {}
+  if (drawerView) renderDrawer(drawerView);
+  renderNotes();
+}
+window.__onScope = onScope;
+
+// ---------------------------------------------------------------- drawer: areas, alerts, phone menu
+let drawerView = null;
+const NAV = [["monitor", "Monitor", "i-monitor"], ["areas", "Areas", "i-areas"], ["alerts", "Alerts", "i-alert"], ["reports", "Reports", "i-report"]];
+function markNav(view) {
+  document.querySelectorAll(".nav-item, .drawer-nav button").forEach((b) => {
+    if (b.dataset.nav === (view || "monitor")) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
+  const n = alerts.length, c = $("#nav-alerts-count");
+  c.hidden = !n; c.textContent = n;
+}
+function renderDrawer(view) {
+  drawerView = view;
+  const body = $("#drawer-body");
+  $("#drawer-nav").innerHTML = NAV.map(([id, label, icon]) => `<button data-nav="${id}"><svg aria-hidden="true"><use href="#${icon}"/></svg>${label}${id === "alerts" && alerts.length ? `<span class="count">${alerts.length}</span>` : ""}</button>`).join("")
+    + `<p class="drawer-ws">${persona().workspace}</p>`;
+  $("#drawer-nav").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => go(b.dataset.nav)));
+  if (view === "areas" || view === "menu") {
+    $("#drawer-title").textContent = view === "menu" ? PRODUCT : "Saved areas";
+    const y = S.years[S.yearIdx];
+    const row = (id, name) => {
+      const st = statsFor(id);
+      const on = (S.areaId || null) === id && !(S.area && !S.areaId);
+      return `<button class="area-row${on ? " on" : ""}" data-id="${id ?? ""}">
+        <span class="area-name">${name}</span>
+        <span class="area-meta">${fmtArea(st.forestHa)} forest · ${Math.round(st.share * 100)}% lost by ${y}</span>
+        <span class="area-bar" aria-hidden="true"><i style="width:${Math.round(st.share * 100)}%"></i></span></button>`;
+    };
+    body.innerHTML = `
+      <label class="filter"><svg aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="area-filter" placeholder="Filter areas" aria-label="Filter areas"></label>
+      <div class="area-list" id="area-list">${row(null, "Upper Harz, whole study area")}${AREAS.map((a) => row(a.id, a.name)).join("")}</div>
+      ${S.area && !S.areaId ? `<p class="drawer-note">You are looking at a custom area. Saving drawn areas is the next thing this product would need.</p>` : ""}
+      <button class="tool wide" id="draw-area">Draw a new area on the map</button>`;
+    body.querySelectorAll(".area-row").forEach((b) => b.addEventListener("click", () => openArea(b.dataset.id || null)));
+    $("#area-filter").addEventListener("input", (e) => {
+      const q = e.target.value.toLowerCase();
+      body.querySelectorAll(".area-row").forEach((b) => { b.hidden = !b.querySelector(".area-name").textContent.toLowerCase().includes(q); });
+    });
+    $("#draw-area").addEventListener("click", () => { closeDrawer(); setAreaMode(true); mapEl.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "center" }); });
+    if (view === "menu") { body.insertAdjacentHTML("afterbegin", `<h3 class="drawer-sub">Saved areas</h3>`); markNav("monitor"); return; }
+  }
+  if (view === "alerts") {
+    $("#drawer-title").textContent = "Alerts";
+    const y = S.years.at(-1);
+    body.innerHTML = alerts.length
+      ? `<div class="alert-list">${alerts.map((al, i) => {
+          const st = statsFor(al.areaId), fresh = (st.byYear.get(y) || 0) * haPerPx(), hit = fresh >= al.threshold;
+          const name = al.areaId ? AREAS.find((a) => a.id === al.areaId)?.name : "Upper Harz";
+          return `<div class="alert-row${hit ? " hit" : ""}"><div><b>${name}</b><small>New loss over ${al.threshold} ha · ${hit ? `triggered, ${fmtArea(fresh)} in ${y}` : `quiet, ${fmtArea(fresh)} in ${y}`}</small></div>
+            <button class="linkbtn" data-open="${al.areaId ?? ""}">View</button><button class="linkbtn" data-del="${i}">Remove</button></div>`;
+        }).join("")}</div>`
+      : `<p class="drawer-empty">No alerts yet. Open an area and choose <b>Set alert</b> to hear about new canopy loss after each pass.</p>`;
+    body.insertAdjacentHTML("beforeend", `<button class="tool wide" id="new-alert">Set an alert for ${areaName()}</button>`);
+    body.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => openArea(b.dataset.open || null)));
+    body.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => {
+      const [gone] = alerts.splice(+b.dataset.del, 1);
+      store.set("stand-alerts", alerts); renderDrawer("alerts"); markNav("alerts"); renderNotes();
+      toast(`Alert removed for ${gone.areaId ? AREAS.find((a) => a.id === gone.areaId)?.name : "Upper Harz"}`);
+    }));
+    $("#new-alert").addEventListener("click", openAlertDialog);
+  }
+  markNav(view);
+}
+function openDrawer(view) {
+  renderDrawer(view);
+  $("#drawer").hidden = false; $("#scrim").hidden = false;
+  $("#btn-menu").setAttribute("aria-expanded", "true");
+  $("#btn-drawer-close").focus({ preventScroll: true });
+}
+function closeDrawer() {
+  if ($("#drawer").hidden) return;
+  $("#drawer").hidden = true; $("#scrim").hidden = true; drawerView = null;
+  $("#btn-menu").setAttribute("aria-expanded", "false");
+  markNav("monitor");
+}
+function go(view) {
+  if (view === "monitor") return closeDrawer();
+  if (view === "reports") { closeDrawer(); return exportReport(); }
+  openDrawer(view);
+}
+document.querySelectorAll("[data-nav]").forEach((b) => b.addEventListener("click", () => go(b.dataset.nav)));
+$("#btn-menu").addEventListener("click", () => openDrawer("menu"));
+$("#btn-drawer-close").addEventListener("click", closeDrawer);
+$("#scrim").addEventListener("click", closeDrawer);
+
+// ---------------------------------------------------------------- alerts
+function openAlertDialog() {
+  closeDrawer();
+  const st = statsFor(S.areaId);
+  $("#alert-lead").textContent = S.area && !S.areaId
+    ? "Alerts need a saved area. Pick one from Areas first, or set it for the whole of Upper Harz."
+    : `For ${areaName()}. By summer ${S.years[S.yearIdx]}, ${fmtArea(st.lostHa)} of its ${fmtArea(st.forestHa)} of forest had lost its canopy.`;
+  const d = $("#alert-dialog");
+  if (d.showModal) d.showModal(); else d.setAttribute("open", "");
+}
+$("#btn-alert").addEventListener("click", openAlertDialog);
+$("#alert-dialog").addEventListener("close", () => {
+  if ($("#alert-dialog").returnValue !== "save") return;
+  const areaId = S.area && !S.areaId ? null : S.areaId || null;
+  const threshold = +$("#alert-threshold").value;
+  const dup = alerts.find((a) => a.areaId === areaId);
+  if (dup) dup.threshold = threshold; else alerts.push({ areaId, threshold });
+  store.set("stand-alerts", alerts);
+  markNav(drawerView); renderNotes();
+  const name = areaId ? AREAS.find((a) => a.id === areaId).name : "Upper Harz";
+  toast(dup ? `Alert updated for ${name}` : `Alert saved for ${name}`);
+});
+
+// ---------------------------------------------------------------- share and report
+$("#btn-share").addEventListener("click", async () => {
+  const url = location.href;
+  const title = `${areaName()}: forest change`;
+  try {
+    if (navigator.share && innerWidth < 1000) { await navigator.share({ title, url }); return; }
+    await navigator.clipboard.writeText(url);
+    toast("Link copied. It opens on this area and view.");
+  } catch (e) {
+    if (e?.name !== "AbortError") toast("Copy the address bar to share this view.");
+  }
+});
+function exportReport() {
+  const p = persona(), st = scopeCache, conf = confidence(st);
+  $("#print-head").innerHTML = `<p>${PRODUCT} · ${p.workspace}</p><h1>${areaName()}: forest change to summer ${st.upto}</h1>
+    <p>${fmtArea(st.lostHa)} of ${fmtArea(st.forestHa)} of forest lost its canopy (${Math.round(st.share * 100)}%). Confidence ${conf.label.toLowerCase()}. Prepared by ${p.name}, ${p.role}, ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}.</p>`;
+  document.querySelector(".method").open = true;
+  toast("Opening the print dialog. Choose Save as PDF for a report.");
+  setTimeout(() => window.print(), 350);
+}
+$("#btn-export").addEventListener("click", exportReport);
+
+// ---------------------------------------------------------------- theme and boot hooks
+window.__onTheme = () => { renderShell(); if (drawerView) renderDrawer(drawerView); };
+window.__onReady = () => {
+  renderShell();
+  markNav("monitor");
+  let id = null;
+  try { id = new URLSearchParams(location.search).get("area"); } catch (e) {}
+  if (id && AREAS.some((a) => a.id === id)) requestAnimationFrame(() => openArea(id));
+  else onScope();
+};
+renderShell();
 
 </script>

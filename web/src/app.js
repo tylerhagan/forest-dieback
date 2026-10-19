@@ -658,7 +658,7 @@ function setYear(i) {
   renderReadout();
   requestDraw();
 }
-function scopeChanged() { scopeCache = scopeStats(); renderYears(); renderVerdict(); requestDraw(); }
+function scopeChanged() { scopeCache = scopeStats(); renderYears(); renderVerdict(); requestDraw(); window.__onScope?.(); }
 
 function stopPlay() {
   clearInterval(S.playing);
@@ -855,6 +855,7 @@ function setTheme(t) {
   try { const u = new URL(location.href); u.searchParams.set("theme", t); history.replaceState(null, "", u); } catch (e) {}
   markTheme();
   readTheme();
+  window.__onTheme?.();
   if (!S.m) return;
   S.ndviCanvas = S.ndvi.map(paintNdvi);
   S.fade = null; S.lastSrc = null;
@@ -874,7 +875,6 @@ document.fonts?.ready.then(() => requestDraw());
   readTheme();
   try { await load(); }
   catch (err) { $("#verdict").innerHTML = `<p>Could not load the data: ${err.message}. Check that the data folder sits next to this page.</p>`; throw err; }
-  $("#title").textContent = "Forest Change Explorer";
   $("#place").textContent = `${S.m.place}. ${S.m.simulated ? "Simulated data" : "Sentinel-2"}, every summer from ${S.years[0]} to ${S.years.at(-1)}: ${S.m.series.dates.length} passes at ${S.m.pixelSizeM} m.`;
   $("#sim-badge").hidden = !S.m.simulated;
   renderLegend();
@@ -898,4 +898,321 @@ document.fonts?.ready.then(() => requestDraw());
   S.ready = false;
   setYear(S.years.length - 1);
   S.ready = true;
+  window.__onReady?.();
 })();
+
+// ================================================================== product shell
+// The explorer sits inside "Stand", an invented monitoring product, so a reviewer sees where the
+// feature lives: saved areas, alerts, reports, data status. Everything here works on the real data.
+const PRODUCT = "Stand";
+const PERSONAS = {
+  field: { name: "Jonas Weber", role: "District forester", initials: "JW", workspace: "Harz forest district" },
+  civic: { name: "Lena Hoffmann", role: "State forest analyst", initials: "LH", workspace: "State forestry office" },
+  orbital: { name: "Sam Okafor", role: "Carbon portfolio lead", initials: "SO", workspace: "Northern Europe portfolio" },
+};
+// Saved areas, defined in the real world; their pixel boxes are worked out from the dataset bounds.
+const AREAS = [
+  { id: "brocken", name: "Brocken summit", lat: 51.7991, lon: 10.6156, km: 2.4 },
+  { id: "achtermann", name: "Achtermannshöhe", lat: 51.7697, lon: 10.5609, km: 2.2 },
+  { id: "torfhaus", name: "Torfhaus moor edge", lat: 51.8030, lon: 10.5420, km: 2.0 },
+  { id: "schierke", name: "Schierke slopes", lat: 51.7680, lon: 10.6560, km: 2.4 },
+];
+const rectCache = new Map();
+function areaRect(id) {
+  if (!id) return null;
+  if (rectCache.has(id)) return rectCache.get(id);
+  const a = AREAS.find((x) => x.id === id);
+  if (!a || !S.m) return null;
+  const [w, s, e, n] = S.m.bbox;
+  const cx = ((a.lon - w) / (e - w)) * S.m.width, cy = ((n - a.lat) / (n - s)) * S.m.height;
+  const half = (a.km * 1000) / 2 / S.m.pixelSizeM;
+  const r = normArea({ x0: cx - half, y0: cy - half, x1: cx + half, y1: cy + half });
+  rectCache.set(id, r);
+  return r;
+}
+const areaName = () => (S.areaId ? AREAS.find((a) => a.id === S.areaId).name : S.area ? "Custom area" : "Upper Harz");
+function statsFor(id) {
+  const keep = S.area;
+  S.area = id ? areaRect(id) : null;
+  const st = scopeStats();
+  S.area = keep;
+  return st;
+}
+const persona = () => PERSONAS[document.documentElement.dataset.theme] || PERSONAS.field;
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+let alerts = store.get("stand-alerts", []);
+let notesSeen = 0;
+
+// ---------------------------------------------------------------- toast
+let toastTimer = 0;
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+}
+
+// ---------------------------------------------------------------- top bar, status bar
+function renderShell() {
+  const p = persona();
+  $("#workspace").textContent = p.workspace;
+  $("#profile").innerHTML = `<span class="who"><b>${p.name}</b><small>${p.role}</small></span><span class="avatar" aria-hidden="true">${p.initials}</span>`;
+  $("#profile").setAttribute("aria-label", `Signed in as ${p.name}, ${p.role}`);
+  if (S.m) { renderStatus(); renderNotes(); }
+}
+const fmtDate = (d) => new Date(d + "T12:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+function renderStatus() {
+  const m = S.m, last = m.composites.at(-1);
+  $("#statusbar").innerHTML = `
+    <span class="ok"><i></i>Up to date</span>
+    <span>Latest pass ${fmtDate(m.series.dates.at(-1))}</span>
+    <span>Sentinel-2 L2A, ${m.pixelSizeM} m</span>
+    <span>${m.series.dates.length} passes since ${m.years[0]}</span>
+    <span>Summer ${last.year}: ${last.clearObs} cloud-free views</span>`;
+}
+
+// ---------------------------------------------------------------- notifications, worked out from the data
+function notes() {
+  const m = S.m, last = m.composites.at(-1), y = last.year;
+  const thin = m.composites.filter((c) => !m.baselineYears.includes(c.year)).sort((a, b) => a.clearObs - b.clearObs)[0];
+  const list = [];
+  for (const al of alerts) {
+    const st = statsFor(al.areaId);
+    const fresh = (st.byYear.get(y) || 0) * haPerPx();
+    const name = al.areaId ? AREAS.find((a) => a.id === al.areaId)?.name : "Upper Harz";
+    list.push(fresh >= al.threshold
+      ? { kind: "hit", title: `Alert: ${name}`, body: `${fmtArea(fresh)} of new canopy loss first seen in ${y}, over your ${al.threshold} ha threshold. Provisional until next summer.`, area: al.areaId }
+      : { kind: "quiet", title: `Alert active: ${name}`, body: `${fmtArea(fresh)} of new loss in ${y}, under your ${al.threshold} ha threshold.`, area: al.areaId });
+  }
+  list.push({ kind: "data", title: `Summer ${y} processed`, body: `${last.clearObs} cloud-free views. Loss first seen this summer stays provisional until ${y + 1}.` });
+  list.push({ kind: "data", title: `Thin coverage in ${thin.year}`, body: `Only ${thin.clearObs} cloud-free views that summer, so loss dated around it may be a year late.` });
+  return list;
+}
+function renderNotes() {
+  const list = notes();
+  const unread = Math.max(0, list.length - notesSeen);
+  const b = $("#notes-badge");
+  b.hidden = !unread; b.textContent = unread;
+  $("#btn-notes").setAttribute("aria-label", unread ? `Notifications, ${unread} new` : "Notifications");
+  $("#notes").innerHTML = `<h2>Notifications</h2>` + list.map((n, i) => `
+    <button class="note ${n.kind}" data-i="${i}" ${n.area !== undefined ? "" : "disabled"}>
+      <i aria-hidden="true"></i><span><b>${n.title}</b><small>${n.body}</small></span></button>`).join("");
+  $("#notes").querySelectorAll(".note:not([disabled])").forEach((el) => el.addEventListener("click", () => {
+    openArea(list[+el.dataset.i].area); closePops();
+  }));
+}
+
+// ---------------------------------------------------------------- popovers
+function closePops(except) {
+  for (const [btn, pop] of [["#btn-notes", "#notes"]]) {
+    if (pop === except) continue;
+    $(pop).hidden = true; $(btn).setAttribute("aria-expanded", "false");
+  }
+  if (except !== "#search-results") { $("#search-results").hidden = true; $("#search").setAttribute("aria-expanded", "false"); }
+}
+$("#btn-notes").addEventListener("click", (e) => {
+  e.stopPropagation();
+  const open = $("#notes").hidden;
+  closePops("#notes");
+  $("#notes").hidden = !open;
+  $("#btn-notes").setAttribute("aria-expanded", String(open));
+  if (open) { notesSeen = notes().length; renderNotes(); }
+});
+document.addEventListener("click", (e) => { if (!e.target.closest(".pop-anchor, .search")) closePops(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closePops(); closeDrawer(); } });
+
+// ---------------------------------------------------------------- search over saved areas
+const matchAreas = (q) => [{ id: null, name: "Upper Harz, whole study area" }, ...AREAS].filter((a) => a.name.toLowerCase().includes(q.trim().toLowerCase()));
+$("#search").addEventListener("input", () => {
+  const q = $("#search").value, box = $("#search-results");
+  if (!q.trim()) { box.hidden = true; return; }
+  const hits = matchAreas(q);
+  box.innerHTML = hits.length
+    ? hits.map((a) => `<button role="option" data-id="${a.id ?? ""}">${a.name}</button>`).join("")
+    : `<p class="empty">No saved area matches “${q.replace(/</g, "&lt;")}”. Draw one with Select an area.</p>`;
+  box.hidden = false;
+  $("#search").setAttribute("aria-expanded", "true");
+  box.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    openArea(b.dataset.id || null); $("#search").value = ""; closePops();
+  }));
+});
+$("#search").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#search-results button")?.click(); });
+
+// ---------------------------------------------------------------- areas
+function zoomToRect(a) {
+  const r = mapEl.getBoundingClientRect();
+  if (!a) { fit(); return; }
+  const s = Math.max(S.fitScale, Math.min(S.fitScale * 14, Math.min(r.width / ((a.x1 - a.x0) * 1.6), r.height / ((a.y1 - a.y0) * 1.6))));
+  S.view = { s, x: r.width / 2 - ((a.x0 + a.x1) / 2) * s, y: r.height / 2 - ((a.y0 + a.y1) / 2) * s };
+  clampView();
+}
+function openArea(id) {
+  S.areaId = id || null;
+  S.area = areaRect(S.areaId);
+  zoomToRect(S.area);
+  if (S.area) {
+    // move the spot history into the area: its centre 200 m square
+    const c = S.m.series.cellSizePx;
+    S.point = { col: Math.min(S.m.series.cols - 1, Math.floor((S.area.x0 + S.area.x1) / 2 / c)), row: Math.min(S.m.series.rows - 1, Math.floor((S.area.y0 + S.area.y1) / 2 / c)) };
+    renderSpot();
+  }
+  scopeChanged();
+  closeDrawer();
+  if (innerWidth < 1000) $(".bar").scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "start" });
+}
+function onScope() {
+  if (S.areaId && S.area !== areaRect(S.areaId)) S.areaId = null; // drawn by hand
+  $("#crumb-area").textContent = areaName();
+  try {
+    const u = new URL(location.href);
+    if (S.areaId) u.searchParams.set("area", S.areaId); else u.searchParams.delete("area");
+    history.replaceState(null, "", u);
+  } catch (e) {}
+  if (drawerView) renderDrawer(drawerView);
+  renderNotes();
+}
+window.__onScope = onScope;
+
+// ---------------------------------------------------------------- drawer: areas, alerts, phone menu
+let drawerView = null;
+const NAV = [["monitor", "Monitor", "i-monitor"], ["areas", "Areas", "i-areas"], ["alerts", "Alerts", "i-alert"], ["reports", "Reports", "i-report"]];
+function markNav(view) {
+  document.querySelectorAll(".nav-item, .drawer-nav button").forEach((b) => {
+    if (b.dataset.nav === (view || "monitor")) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
+  const n = alerts.length, c = $("#nav-alerts-count");
+  c.hidden = !n; c.textContent = n;
+}
+function renderDrawer(view) {
+  drawerView = view;
+  const body = $("#drawer-body");
+  $("#drawer-nav").innerHTML = NAV.map(([id, label, icon]) => `<button data-nav="${id}"><svg aria-hidden="true"><use href="#${icon}"/></svg>${label}${id === "alerts" && alerts.length ? `<span class="count">${alerts.length}</span>` : ""}</button>`).join("")
+    + `<p class="drawer-ws">${persona().workspace}</p>`;
+  $("#drawer-nav").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => go(b.dataset.nav)));
+  if (view === "areas" || view === "menu") {
+    $("#drawer-title").textContent = view === "menu" ? PRODUCT : "Saved areas";
+    const y = S.years[S.yearIdx];
+    const row = (id, name) => {
+      const st = statsFor(id);
+      const on = (S.areaId || null) === id && !(S.area && !S.areaId);
+      return `<button class="area-row${on ? " on" : ""}" data-id="${id ?? ""}">
+        <span class="area-name">${name}</span>
+        <span class="area-meta">${fmtArea(st.forestHa)} forest · ${Math.round(st.share * 100)}% lost by ${y}</span>
+        <span class="area-bar" aria-hidden="true"><i style="width:${Math.round(st.share * 100)}%"></i></span></button>`;
+    };
+    body.innerHTML = `
+      <label class="filter"><svg aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="area-filter" placeholder="Filter areas" aria-label="Filter areas"></label>
+      <div class="area-list" id="area-list">${row(null, "Upper Harz, whole study area")}${AREAS.map((a) => row(a.id, a.name)).join("")}</div>
+      ${S.area && !S.areaId ? `<p class="drawer-note">You are looking at a custom area. Saving drawn areas is the next thing this product would need.</p>` : ""}
+      <button class="tool wide" id="draw-area">Draw a new area on the map</button>`;
+    body.querySelectorAll(".area-row").forEach((b) => b.addEventListener("click", () => openArea(b.dataset.id || null)));
+    $("#area-filter").addEventListener("input", (e) => {
+      const q = e.target.value.toLowerCase();
+      body.querySelectorAll(".area-row").forEach((b) => { b.hidden = !b.querySelector(".area-name").textContent.toLowerCase().includes(q); });
+    });
+    $("#draw-area").addEventListener("click", () => { closeDrawer(); setAreaMode(true); mapEl.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "center" }); });
+    if (view === "menu") { body.insertAdjacentHTML("afterbegin", `<h3 class="drawer-sub">Saved areas</h3>`); markNav("monitor"); return; }
+  }
+  if (view === "alerts") {
+    $("#drawer-title").textContent = "Alerts";
+    const y = S.years.at(-1);
+    body.innerHTML = alerts.length
+      ? `<div class="alert-list">${alerts.map((al, i) => {
+          const st = statsFor(al.areaId), fresh = (st.byYear.get(y) || 0) * haPerPx(), hit = fresh >= al.threshold;
+          const name = al.areaId ? AREAS.find((a) => a.id === al.areaId)?.name : "Upper Harz";
+          return `<div class="alert-row${hit ? " hit" : ""}"><div><b>${name}</b><small>New loss over ${al.threshold} ha · ${hit ? `triggered, ${fmtArea(fresh)} in ${y}` : `quiet, ${fmtArea(fresh)} in ${y}`}</small></div>
+            <button class="linkbtn" data-open="${al.areaId ?? ""}">View</button><button class="linkbtn" data-del="${i}">Remove</button></div>`;
+        }).join("")}</div>`
+      : `<p class="drawer-empty">No alerts yet. Open an area and choose <b>Set alert</b> to hear about new canopy loss after each pass.</p>`;
+    body.insertAdjacentHTML("beforeend", `<button class="tool wide" id="new-alert">Set an alert for ${areaName()}</button>`);
+    body.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => openArea(b.dataset.open || null)));
+    body.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => {
+      const [gone] = alerts.splice(+b.dataset.del, 1);
+      store.set("stand-alerts", alerts); renderDrawer("alerts"); markNav("alerts"); renderNotes();
+      toast(`Alert removed for ${gone.areaId ? AREAS.find((a) => a.id === gone.areaId)?.name : "Upper Harz"}`);
+    }));
+    $("#new-alert").addEventListener("click", openAlertDialog);
+  }
+  markNav(view);
+}
+function openDrawer(view) {
+  renderDrawer(view);
+  $("#drawer").hidden = false; $("#scrim").hidden = false;
+  $("#btn-menu").setAttribute("aria-expanded", "true");
+  $("#btn-drawer-close").focus({ preventScroll: true });
+}
+function closeDrawer() {
+  if ($("#drawer").hidden) return;
+  $("#drawer").hidden = true; $("#scrim").hidden = true; drawerView = null;
+  $("#btn-menu").setAttribute("aria-expanded", "false");
+  markNav("monitor");
+}
+function go(view) {
+  if (view === "monitor") return closeDrawer();
+  if (view === "reports") { closeDrawer(); return exportReport(); }
+  openDrawer(view);
+}
+document.querySelectorAll("[data-nav]").forEach((b) => b.addEventListener("click", () => go(b.dataset.nav)));
+$("#btn-menu").addEventListener("click", () => openDrawer("menu"));
+$("#btn-drawer-close").addEventListener("click", closeDrawer);
+$("#scrim").addEventListener("click", closeDrawer);
+
+// ---------------------------------------------------------------- alerts
+function openAlertDialog() {
+  closeDrawer();
+  const st = statsFor(S.areaId);
+  $("#alert-lead").textContent = S.area && !S.areaId
+    ? "Alerts need a saved area. Pick one from Areas first, or set it for the whole of Upper Harz."
+    : `For ${areaName()}. By summer ${S.years[S.yearIdx]}, ${fmtArea(st.lostHa)} of its ${fmtArea(st.forestHa)} of forest had lost its canopy.`;
+  const d = $("#alert-dialog");
+  if (d.showModal) d.showModal(); else d.setAttribute("open", "");
+}
+$("#btn-alert").addEventListener("click", openAlertDialog);
+$("#alert-dialog").addEventListener("close", () => {
+  if ($("#alert-dialog").returnValue !== "save") return;
+  const areaId = S.area && !S.areaId ? null : S.areaId || null;
+  const threshold = +$("#alert-threshold").value;
+  const dup = alerts.find((a) => a.areaId === areaId);
+  if (dup) dup.threshold = threshold; else alerts.push({ areaId, threshold });
+  store.set("stand-alerts", alerts);
+  markNav(drawerView); renderNotes();
+  const name = areaId ? AREAS.find((a) => a.id === areaId).name : "Upper Harz";
+  toast(dup ? `Alert updated for ${name}` : `Alert saved for ${name}`);
+});
+
+// ---------------------------------------------------------------- share and report
+$("#btn-share").addEventListener("click", async () => {
+  const url = location.href;
+  const title = `${areaName()}: forest change`;
+  try {
+    if (navigator.share && innerWidth < 1000) { await navigator.share({ title, url }); return; }
+    await navigator.clipboard.writeText(url);
+    toast("Link copied. It opens on this area and view.");
+  } catch (e) {
+    if (e?.name !== "AbortError") toast("Copy the address bar to share this view.");
+  }
+});
+function exportReport() {
+  const p = persona(), st = scopeCache, conf = confidence(st);
+  $("#print-head").innerHTML = `<p>${PRODUCT} · ${p.workspace}</p><h1>${areaName()}: forest change to summer ${st.upto}</h1>
+    <p>${fmtArea(st.lostHa)} of ${fmtArea(st.forestHa)} of forest lost its canopy (${Math.round(st.share * 100)}%). Confidence ${conf.label.toLowerCase()}. Prepared by ${p.name}, ${p.role}, ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}.</p>`;
+  document.querySelector(".method").open = true;
+  toast("Opening the print dialog. Choose Save as PDF for a report.");
+  setTimeout(() => window.print(), 350);
+}
+$("#btn-export").addEventListener("click", exportReport);
+
+// ---------------------------------------------------------------- theme and boot hooks
+window.__onTheme = () => { renderShell(); if (drawerView) renderDrawer(drawerView); };
+window.__onReady = () => {
+  renderShell();
+  markNav("monitor");
+  let id = null;
+  try { id = new URLSearchParams(location.search).get("area"); } catch (e) {}
+  if (id && AREAS.some((a) => a.id === id)) requestAnimationFrame(() => openArea(id));
+  else onScope();
+};
+renderShell();
