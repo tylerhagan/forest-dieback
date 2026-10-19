@@ -14,7 +14,7 @@ const NDVI_STOPS = [
 ];
 // First year of loss, in rust inks: early, settled loss = deep oxblood; recent, unconfirmed = pale ochre.
 // Every colour the canvas draws comes from the CSS tokens, so a theme is a stylesheet change.
-let ONSET, HEALTHY, PAPER, INK, NODATA, PLATE, WASH, NF, BASEC;
+let ONSET, HEALTHY, PAPER, INK, ACCENT, NODATA, PLATE, WASH, NF, BASEC, FONT;
 // Browsers may hand custom properties back as hex, rgb() or a name, so colours are resolved by
 // painting one pixel; anything missing falls back to the field-sheet defaults.
 const probe = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
@@ -34,6 +34,7 @@ function readTheme() {
   const LOSS = ["#5c1913", "#8c2618", "#b23d1c", "#cb5f24", "#da8532", "#e2aa4b", "#e9c970"];
   ONSET = LOSS.map((d, i) => col(`--loss-${i}`, d));
   HEALTHY = col("--spruce", "#2e5b43"); PAPER = col("--sheet", "#f2f4ef"); INK = col("--ink", "#17201b");
+  ACCENT = col("--accent", INK); FONT = v("--font") || "sans-serif";
   NODATA = toRgb(v("--nodata"), "#d3d9d1");
   PLATE = { lo: num("--plate-lo", 0.36), span: num("--plate-span", 0.4), tint: toRgb(v("--plate-tint"), "#f2fbef") };
   WASH = v("--wash") || "rgba(242,244,239,0.66)";
@@ -256,7 +257,7 @@ function setSource(src) {
 }
 
 function draw() {
-  if (!S.m) return;
+  if (!S.m || !S.onset) return; // data still loading
   const W = canvas.width / dpr, H = canvas.height / dpr;
   const { s, x, y } = S.view;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -304,7 +305,7 @@ function drawArea(a, W, H) {
   ctx.rect(0, 0, W, H);
   ctx.rect(x0, y0, x1 - x0, y1 - y0);
   ctx.fill("evenodd");
-  ctx.strokeStyle = INK;
+  ctx.strokeStyle = ACCENT;
   ctx.lineWidth = 2.5;
   const L = Math.min(16, (x1 - x0) / 3, (y1 - y0) / 3);
   ctx.beginPath();
@@ -312,7 +313,7 @@ function drawArea(a, W, H) {
     ctx.moveTo(cx + dx * L, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + dy * L);
   }
   ctx.stroke();
-  ctx.strokeStyle = INK;
+  ctx.strokeStyle = ACCENT;
   ctx.lineWidth = 1;
   ctx.strokeRect(x0, y0, x1 - x0, y1 - y0);
 }
@@ -332,7 +333,7 @@ function drawReticle() {
     ctx.moveTo(cx, cy + r); ctx.lineTo(cx, cy + r + arm);
   };
   ctx.lineWidth = 4; ctx.strokeStyle = PAPER; path(); ctx.stroke();
-  ctx.lineWidth = 1.75; ctx.strokeStyle = INK; path(); ctx.stroke();
+  ctx.lineWidth = 1.75; ctx.strokeStyle = ACCENT; path(); ctx.stroke();
 }
 
 // Neatline margin, as on a printed sheet: a paper band along the top and right edges carries
@@ -350,7 +351,7 @@ function drawGraticule(W, H) {
   ctx.fillStyle = INK;
   ctx.fillRect(0, BAND - 1, W - BAND, 1);
   ctx.fillRect(W - BAND, BAND - 1, 1, H - BAND + 1);
-  ctx.font = "500 10px Archivo, ui-sans-serif, system-ui, sans-serif";
+  ctx.font = `500 10px ${FONT}`;
   ctx.strokeStyle = INK;
   ctx.lineWidth = 1;
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -549,7 +550,7 @@ function renderLegend() {
   el.innerHTML = `<div class="lbl">Year the canopy was lost</div>
     <div class="ramp">${ys.map((y) => `<i style="background:${onsetColour(y)}"></i>`).join("")}</div>
     <div class="ends"><span>${ys[0]}</span><span>${ys.at(-1)}</span></div>
-    <div class="faded"><i></i>Faded: green again, not forest</div>`;
+    <div class="faded"><i style="background:linear-gradient(90deg,${ONSET[1]} 50%,${ONSET[1]}61 50%)"></i>Faded: green again, not forest</div>`;
 }
 
 // ------------------------------------------------------------------ scope statistics
@@ -614,7 +615,7 @@ function renderYears() {
     const n = st.byYear.get(y);
     const col = isBase
       ? `<span class="base">base</span>`
-      : `<span class="ha">${n ? fmtArea(n * k) : ""}</span><span class="loss" style="height:${n ? Math.max(2, (34 * n) / maxLoss) : 1}px;background:${n ? onsetColour(y) : "var(--line)"}"></span>`;
+      : `<span class="ha">${n ? fmtArea(n * k) : ""}</span><span class="loss" style="height:${n ? Math.max(2, (34 * n) / maxLoss) : 1}px;background:${n ? onsetColour(y) : "var(--rule)"};color:${n ? onsetColour(y) : "transparent"}"></span>`;
     return `<div class="yr" data-i="${i}"><div class="col">${col}</div><div class="y">${y}</div>
       <div class="q" title="${S.m.composites[i].clearObs} cloud-free views per pixel (median)"><i style="width:${(100 * S.m.composites[i].clearObs) / maxClear}%"></i></div></div>`;
   }).join("");
@@ -842,6 +843,31 @@ function renderMethod() {
     <p><strong>Confidence.</strong> High needs at least 15 cloud-free views per 200 m square in both the baseline and the latest two summers, and fewer than 10% of forest pixels missing a summer. Medium needs 6 or more and fewer than 30%. Anything less is Low.</p>
     <p><strong>Limits.</strong> One vegetation index cannot tell bark beetle from felling, storm or drought. 20 m pixels miss single trees. Coordinates are approximate.</p>`;
 }
+
+// ------------------------------------------------------------------ theme
+function markTheme() {
+  const t = document.documentElement.dataset.theme;
+  document.querySelectorAll("[data-theme-pick]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.themePick === t)));
+}
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem("fce-theme", t); } catch (e) {}
+  try { const u = new URL(location.href); u.searchParams.set("theme", t); history.replaceState(null, "", u); } catch (e) {}
+  markTheme();
+  readTheme();
+  if (!S.m) return;
+  S.ndviCanvas = S.ndvi.map(paintNdvi);
+  S.fade = null; S.lastSrc = null;
+  renderLegend();
+  renderYears();
+  renderVerdict();
+  renderSpot();
+  requestDraw();
+}
+document.querySelectorAll("[data-theme-pick]").forEach((b) => b.addEventListener("click", () => setTheme(b.dataset.themePick)));
+markTheme();
+// fonts arrive after first paint; redraw so the map margin labels use the theme's face
+document.fonts?.ready.then(() => requestDraw());
 
 // ------------------------------------------------------------------ boot
 (async function boot() {
