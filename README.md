@@ -8,14 +8,13 @@ It uses real Copernicus Sentinel-2 imagery of the upper Harz (Brocken, Schierke 
 
 **Live:** [forest.tylerhagan.co.uk](https://forest.tylerhagan.co.uk) · **Case study:** [forest.tylerhagan.co.uk/case-study](https://forest.tylerhagan.co.uk/case-study/) ([PDF](web/case-study/forest-change-case-study.pdf))
 
-Run it locally:
+To run it locally, serve the `web` folder rather than opening `index.html` directly. Browsers block a page opened from disk from loading its data files, so the map would stay blank.
 
 ```sh
-cd web && python3 -m http.server 8000
-# open http://localhost:8000
+cd web && python3 -m http.server
 ```
 
-No build step and no dependencies. The front end is plain JavaScript, canvas and SVG.
+There is no build step and there are no dependencies. The front end is plain JavaScript, canvas and SVG.
 
 ## What you can do
 
